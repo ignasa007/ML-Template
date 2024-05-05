@@ -2,10 +2,15 @@
 
 
 from typing import Callable
+
 loss_fn: Callable
 
 
 def train_batch(model, optimizer, *input_args, **input_kwargs):
+
+    '''
+    Evaluate the model on a batch from the train set.
+    '''
     
     # set model into train mode
     model.train()
@@ -21,6 +26,13 @@ def train_batch(model, optimizer, *input_args, **input_kwargs):
 
 
 def train_epoch(model, optimizer, data_loader):
+
+    '''
+    Evaluate the model on the training set.
+
+    Args:
+        data_loader (torch.utils.data.DataLoader): train loader.
+    '''
     
     # initialize loggers, for example, total epoch loss and/or predictions
     

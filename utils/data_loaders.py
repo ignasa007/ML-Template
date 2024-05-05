@@ -26,7 +26,7 @@ def collate_fn(batch):
         3. simply preparing the input for the model
 
     Args:
-        batch (List): A list of B samples.
+        batch (List): a list of B samples.
             eg. [(image_1, label_1), ..., (image_B, label_B)]
 
     Return:
