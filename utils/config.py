@@ -4,6 +4,14 @@ from yacs.config import CfgNode as CN
 
 def default_cfg():
 
+    '''
+    The default configuration object for the experiments.
+        - Need to register all configurations that are expected.
+
+    Return:
+        _C: A confiduration object with placeholder values.
+    '''
+
     _C = CN()
     # _C.property = None
 
@@ -22,7 +30,20 @@ def default_cfg():
 
 class Config:
     
-    def __init__(self, root: str, dataset: str, model: str, override: Union[list, None] = None):
+    def __init__(self, root, dataset, model, override=None):
+
+        '''
+        Initialization of the configuration object used by the main file.
+
+        Args:
+            root (str): file path for the default configurations.
+            dataset (str): file path for the dataset configurations used in
+                the experiment.
+            model (str): file path for the model configurations used in the
+                experiment.
+            override (Union[list, None]): key-value pairs with command-line
+                arguments indicating the configurations to override.
+        '''
 
         self.cfg = default_cfg()
         self.cfg.merge_from_file(f'{root}/config.yaml')
@@ -33,5 +54,9 @@ class Config:
             self.cfg.merge_from_list(override)
 
     def __getattr__(self, name: str):
+
+        '''
+        Method for returning configurations using dot operator.
+        '''
 
         return self.cfg.__getattr__(name)

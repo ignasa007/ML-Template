@@ -4,10 +4,10 @@ class Results:
         self.results = None
 
     def update_results(self):
-        pass
+        raise NotImplementedError
 
     def compute_metrics(self):
-        pass
+        raise NotImplementedError
 
     def get(self):
-        pass
+        raise NotImplementedError

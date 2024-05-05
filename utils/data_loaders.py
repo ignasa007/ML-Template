@@ -1,32 +1,48 @@
 from torch.utils.data import Dataset
+from torch.utils.data import default_collate
 
 
 class CustomDataset(Dataset):
 
     def __init__(self):
+
         super(CustomDataset, self).__init__()
-        pass
 
     def __len__(self):
-        pass
+        
+        raise NotImplementedError
     
     def __getitem__(self, index):
-        pass
+        
+        raise NotImplementedError
 
 
 def collate_fn(batch):
-    # batch is a list of B samples
-    #       for example, [(image_1, label_1), (image_2, label_2), ..., (image_B, label_B)]
-    # collate functions could be (amongst other things) --
-    #       1. run specific transformations, for example, random augmentations
-    #       2. batch dependent transformations, for example, batch normalization
-    #       3. simply preparing the input for the model
-    #               for example, as ([image_1, ..., image_B], [label_1, ..., label_B])
-    pass
+
+    '''
+    Collate functions could be used for (amongst other things):
+        1. applying a new random augmentations in each forward pass
+        2. applying batch dependent transformations, eg. batch normalization
+        3. simply preparing the input for the model
+
+    Args:
+        batch (List): A list of B samples.
+            eg. [(image_1, label_1), ..., (image_B, label_B)]
+
+    Return:
+        loader_iterates (List): processed samples, as returned by data loader 
+            eg. [(image_1, ..., image_B), (label_1, ..., label_B)]
+    '''
+
+    loader_iterates = default_collate(batch)
+
+    return loader_iterates
 
 
 def data_loaders(*args):
-    # yield train_loader
-    # yield val_loader
-    # yield test_loader
-    pass
+    
+    '''
+    Return data loaders for training, validation and test sets.
+    '''
+    
+    raise NotImplementedError
