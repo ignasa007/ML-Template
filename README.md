@@ -2,6 +2,19 @@
 
 This is a template for Machine Learning projects.
 
+## How to use
+
+To instantiate your project using this template, on the [template's GitHub page](https://github.com/ignasa007/ML-Template.git), click `Use this template`, then `Create a new repository`.
+
+Otheriwse, if you already have a local git repository, run
+```bash
+cd <local-git-repo>
+git remote add ml-template https://github.com/ignasa007/ML-Template.git
+git fetch ml-template
+git merge --allow-unrelated-histories ml-template/main
+git remote remove ml-template
+```
+
 ## Directory Structure
 
 - `assets` - plots generated from different experiments.
