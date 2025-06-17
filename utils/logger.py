@@ -1,101 +1,139 @@
+from typing import Any, Dict, Union
+from argparse import Namespace
 import os
 from datetime import datetime
 import pickle
+
+import yaml
+from yacs.config import CfgNode
 import numpy as np
 import torch
+from torch import Tensor
 
 
 class Logger:
 
-    def __init__(self, dataset, model, *args, **kwargs):
+    @staticmethod
+    def timestamp() -> str:
+        return datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    
+    @staticmethod
+    def process_kwargs(**kwargs) -> Dict[str, Any]:
+        if "kwargs" in kwargs:
+            kwargs.update(kwargs.pop("kwargs"))
+        return kwargs
+    
+    @staticmethod
+    def sci_notation(x: Union[int, float], decimals: int = 6, strip: bool = True) -> str:
+        mantissa, exponent = f"{x:.{decimals}e}".split("e")
+        if strip:
+            mantissa = mantissa.rstrip("0").rstrip(".")
+        return mantissa + f"e{exponent}"
+    
+    @staticmethod
+    def fix_ext(fn: str, default_ext: str, force_ext: bool = False):
+        assert len(default_ext) > 1
+        root, ext = os.path.splitext(fn)
+        # `fn` already has a valid extension and `force_ext` is False
+        if len(ext) > 1 and not force_ext:
+            return fn
+        # Add extension if `fn` has an invalid extension or `force_ext` is True
+        else:
+            return root + default_ext
 
-        '''
+    def __init__(self, args: Namespace, cfg: CfgNode):
+
+        """
         Initialize the logging directory:
-            ./results/<dataset>/<model>/.../<datetime>/
+            ./results/<dataset>/<architecture>/.../<datetime>/
 
         Args:
-            dataset (str): dataset name.
-            model (str): model name.
-        '''
+            args (Namespace): command-line arguments.
+            cfg (CfgNode): configurations picked from ./config/.
+        """
         
-        self.EXP_DIR = f'./results/{dataset}/{model}'
-        self.EXP_DIR += f"/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
-        self.PICKLE_DIR = f'{self.EXP_DIR}/pickle'
-        self.ARRAY_DIR = f'{self.EXP_DIR}/arrays'
-        self.TENSOR_DIR = f'{self.EXP_DIR}/tensors'
-        os.makedirs(self.EXP_DIR)
+        self.EXP_DIR = f"./results/{cfg.dataset}/{cfg.architecture}/{Logger.timestamp()}"
+        self.OBJECTS_DIR = f"{self.EXP_DIR}/objects"
+        os.makedirs(self.OBJECTS_DIR)
+        self.save_objects(args=args, cfg=cfg)
 
-    def log(self, text, with_time=True, print_text=False):
+        # Log the command-line arguments
+        self.log(yaml.safe_dump(vars(args), indent=4), with_time=False)
+        # Log the rest of the configurations
+        self.log(cfg.dump(indent=4), with_time=False)
 
-        '''
+    def log(self, text: str, with_time: bool = True, print_text: bool = False) -> None:
+        
+        """
         Write logs to the the logging file: ./<EXP_DIR>/logs
-
+        
         Args:
             text (str): text to write to the log file.
             with_time (bool): prepend text with datetime of writing.
             print_text (bool): print the text to console, in addition
                 to writing it to the log file.
-        '''
-
+        """
+        
         if print_text:
             print(text)
         if with_time:
-            text = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}: {text}"
-        with open(f'{self.EXP_DIR}/logs', 'a') as f:
-            f.write(text + '\n')
+            text = f"[{Logger.timestamp()}] {text}"
+        with open(f"{self.EXP_DIR}/logs", "a") as f:
+            f.write(text + "\n")
 
-    def save_pickle(self, fn, obj):
+    def log_metrics(
+        self,
+        metrics: Dict[str, Tensor],
+        prefix: str = '',
+        with_time: bool = True,
+        print_text: bool = False
+    ) -> None:
 
-        '''
-        Save a Python object as a (binary) pickle file.
+        formatted_metrics = prefix
+        formatted_metrics += ", ".join(
+            f"{metric} = {Logger.sci_notation(value.item(), decimals=6, strip=False)}" 
+            for metric, value in metrics
+        )
+        self.log(formatted_metrics, with_time, print_text)
 
+    def save_objects(self, **kwargs) -> None:
+        
+        """
+        Save Python objects as (binary) pickle files.
+        
         Args:
-            fn (str): file name to save the object at.
-            obj (Any): Python object to save.
-        '''
+            kwargs (Dict[str, Object]): <value> to be saved into <key>.pickle
+        
+        Args can be passed as
+            - `Logger.save_objects(a=1, b=2, c=3, d=4)`
+            - `Logger.save_objects(kwargs={"a": 1, "b": 2}, c=3, d=4)`
+            - `Logger.save_objects(kwargs={"a": 1, "b": 2, "c": 3, "d": 4})`
+        In each case, the kwargs will be transformed as
+            `kwargs = {"a": 1, "b": 2, "c": 3, "d": 4}`
+        """
+        
+        kwargs = Logger.process_kwargs(kwargs)
+        for fn, obj in kwargs.items():
+            fn = Logger.fix_ext(fn, default_ext=".pickle")
+            with open(f"{self.OBJECTS_DIR}/{fn}", "wb") as f:
+                pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-        if not fn.endswith('.pkl'):
-            fn = os.path.splitext(fn)[0] + '.pkl'
-        with open(f'{self.PICKLE_DIR}/{fn}', 'wb') as f:
-            pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
+    def save_arrays(self, **kwargs) -> None:
+        """Save NumPy arrays."""
+        
+        kwargs = Logger.process_kwargs(kwargs)
+        for fn, arr in kwargs.items():
+            assert isinstance(arr, np.ndarray), \
+                f"Expected NumPy arrays, instead received type({fn}) = {type(arr)}."
+            fn = Logger.fix_ext(fn, default_ext=".npy", force_ext=True)
+            np.save(file=f"{self.OBJECTS_DIR}/{fn}", arr=arr, allow_pickle=True)
 
-    def save_arrays(self, fn, *args, **kwargs):
-
-        '''
-        Save NumPy arrays.
-
-        Args:
-            args (List[np.ndarray]): arrays saved into <fn>_unnamed.npz 
-                and can be queried using integer indexing.
-            kwargs (Dict[str, np.ndarray]): arrays saved into <fn>_named.npz 
-                and can be queried using string indexing.
-        '''
-
-        if args:
-            assert all([isinstance(ar, np.ndarray) for ar in args]), \
-                f'Expected NumPy arrays, instead received {set((type(ar) for ar in args))}.'
-            unnamed_fn = os.path.splitext(fn)[0] + '_unnamed.npz'
-            with open(f'{self.ARRAY_DIR}/{unnamed_fn}', 'wb') as f:
-                np.savez(f, *args)
-        if kwargs:
-            assert all([isinstance(ar, np.ndarray) for ar in kwargs.keys()]), \
-                f'Expected NumPy arrays, instead received {set((type(ar) for ar in kwargs.keys()))}.'
-            named_fn = os.path.splitext(fn)[0] + '_named.npz'
-            with open(f'{self.ARRAY_DIR}/{named_fn}', 'wb') as f:
-                np.savez(f, **kwargs)
-
-    def save_tensors(self, fn, tensor):
-
-        '''
-        Save a PyTorch tensor object.
-
-        Args:
-            fn (str): file name to save the tensor at.
-            obj (torch.Tensor): Torch tensor to save.
-        '''
-
-        assert isinstance(tensor, torch.Tensor), \
-            f'Expected Torch tensor, instead received {type(tensor)}.'
-        if not fn.endswith('.pt'):
-            fn = os.path.splitext(fn)[0] + '.pt'
-        torch.save(tensor, f'{self.TENSOR_DIR}/fn')
+    def save_tensors(self, **kwargs) -> None:
+        """Save PyTorch tensors."""
+        
+        kwargs = Logger.process_kwargs(kwargs)
+        for fn, tensor in kwargs.items():
+            assert isinstance(tensor, Tensor), \
+                f"Expected PyTorch tensors, instead received type({fn}) = {type(tensor)}."
+            fn = Logger.fix_ext(fn, default_ext=".pt")
+            torch.save(tensor, f=f"{self.OBJECTS_DIR}/{fn}", force_ext=True)

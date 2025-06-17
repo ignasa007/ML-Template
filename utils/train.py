@@ -1,45 +1,38 @@
-# TODO: check if passing model to train functions makes copies. if so, refactor.
+from typing import Dict
+
+from torch import Tensor
+from torch.optim import Optimizer
+
+from models import BaseArchitecture
+from metrics import Results
 
 
-from typing import Callable
-
-loss_fn: Callable
-
-
-def train_batch(model, optimizer, *input_args, **input_kwargs):
-
-    '''
-    Evaluate the model on a batch from the train set.
-    '''
+def train_batch(
+    input,
+    target: Tensor,
+    model: BaseArchitecture,
+    objective: str,
+    optimizer: Optimizer,
+    results: Results
+) -> Dict[str, Tensor]:
     
-    # set model into train mode
-    model.train()
-    optimizer.zero_grad()
-
-    output = model(*input_args, **input_kwargs)
-    loss = loss_fn(output)
-
-    loss.backward()
-    optimizer.step()
-
-    return # for example, batch loss and/or predictions
-
-
-def train_epoch(model, optimizer, data_loader):
-
-    '''
-    Evaluate the model on the training set.
+    """
+    Evaluate the model on a batch from the train set.
+    Set train/eval mode before passing the model.
 
     Args:
-        data_loader (torch.utils.data.DataLoader): train loader.
-    '''
-    
-    # initialize loggers, for example, total epoch loss and/or predictions
-    
-    for collated_batch in data_loader:
-        # process the collated batch
-        output = train_batch(model, optimizer, collated_batch)
-        # update the loggers
-        pass
+        input: model input.
+        target (torch.Tensor): groundtruth label.
+        model (model.BaseModel): model.
+        objective (str): key for the metrics dictionary returned by update step of `results`.
+        optimizer (torch.optim.Optimizer): optimizer.
+        results (Dict[str, torch.Tensor]): metrics over the batch.
+    """
 
-    return # loggers
+    out = model(input)
+    metrics = results.forward(out, target)
+
+    metrics[objective].backward()
+    optimizer.step()
+
+    return metrics
