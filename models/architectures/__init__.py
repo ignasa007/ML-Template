@@ -19,6 +19,7 @@ def get_architecture(architecture_name: str, cfg: CfgNode) -> BaseArchitecture:
     Function to map architecture name to architecture class.
     Args:
         architecture_name (str): name of the architecture used for the experiment
+        cfg (yacs.CfgNode): experiment configurations.
     Return:
         architecture_class (Basearchitecture): a architecture class
     """
