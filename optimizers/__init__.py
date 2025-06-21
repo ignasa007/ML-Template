@@ -9,7 +9,7 @@ map = {
     'adamw': AdamW,
 }
 
-def get_optimizer(cfg: CfgNode, parameters: dict) -> Optimizer:
+def get_optimizer(parameters: dict, cfg: CfgNode) -> Optimizer:
     """
     Function to map optimizer name to optimizer class.
     Args:
