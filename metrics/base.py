@@ -1,4 +1,4 @@
-from torch import Tensor
+from torch import Tensor, device as Device
 
 
 class BaseMetric:
@@ -8,6 +8,10 @@ class BaseMetric:
     def __init__(self):
         """Initialize an object to save the results in."""
         self.reset()
+
+    def to(self, device: Device):
+        """Compute the results on device."""
+        raise NotImplementedError
 
     def reset(self) -> None:
         """Reset metric state variables to their default value."""

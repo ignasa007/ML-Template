@@ -3,7 +3,7 @@ from typing import Union
 from yacs.config import CfgNode
 from torch import Tensor, sigmoid, softmax
 from torch.nn.functional import binary_cross_entropy_with_logits, cross_entropy
-from torchmetrics import Metric, Accuracy, F1Score, AUROC
+from torchmetrics import Accuracy, F1Score, AUROC
 
 from metrics.base import BaseMetric
 
@@ -59,7 +59,7 @@ class ClassificationMetric(BaseMetric):
 
     def __init__(self, cfg: CfgNode):
 
-        num_classes = cfg.data.num_classes
+        num_classes = cfg.dataset.num_classes
         if not isinstance(self.num_classes, int):
             raise TypeError(f'Expected `cfg.dataset.num_classes` to be an instance of `int` (got {type(num_classes)}).')
         

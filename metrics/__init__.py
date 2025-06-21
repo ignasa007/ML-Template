@@ -23,9 +23,10 @@ def get_metric(metric_name: str, cfg: CfgNode) -> BaseMetric:
     """
     Function to map metric name to metric class.
     Args:
-        metric_name (str): name of the metric function
+        metric_name (str): name of the metric function.
+        cfg (yacs.CfgNode): experiment configurations.
     Return:
-        metric_class (BaseMetric): a piecewise metric function
+        metric_class (BaseMetric): a piecewise metric function.
     """
 
     formatted_metric_name = metric_name.lower()
@@ -44,7 +45,9 @@ def get_metric(metric_name: str, cfg: CfgNode) -> BaseMetric:
 class Results:
 
     def __init__(self, cfg: CfgNode):
+        # Optimization objective
         self.metrics = [get_metric(cfg.dataset.objective, cfg)]
+        # Other metrics to track
         for metric_name in cfg.dataset.metrics:
             self.metrics.append(get_metric(metric_name, cfg))
 
