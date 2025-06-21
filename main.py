@@ -32,7 +32,9 @@ train_dataset, eval_datasets = get_dataset(args.dataset, cfg)
 logger.log("Finished pre-processing datasets.\n", print_text=True)
 
 logger.log("Preparing data-loaders...", print_text=True)
-train_loader, eval_loaders = get_loaders(train_dataset, *eval_datasets, cfg, device)
+names, eval_datasets = zip(eval_datasets)
+train_loader, eval_loaders = get_loaders([train_dataset]+list(eval_datasets), cfg, device)
+eval_loaders = [(name, eval_loader) for name, eval_loader in zip(names, eval_loaders)]
 logger.log("Finished preparing data-loaders.\n", print_text=True)
 
 logger.log("Preparing model...", print_text=True)
@@ -80,13 +82,13 @@ while n_epochs < cfg.train.n_epochs:
         if cfg.train.log_every.batch > 0 and n_batches % cfg.train.log_every.batch == 0:
             # Log trained batch
             logger.log(f"{n_batches} batches trained.")
-            logger.log_metrics(metrics, prefix="Training Set: ")
+            logger.log_metrics(metrics, prefix="Training set: ")
             if 0 < cfg.eval.log_every.batch and n_batches % cfg.eval.log_every.batch == 0:
                 # Evaluate and log
-                for i, eval_loader in enumerate(eval_loaders, 1):
+                for i, (name, eval_loader) in enumerate(eval_loaders, 1):
                     eval_results.reset()
                     metrics = eval_epoch(eval_loader, model, eval_results)
-                    logger.log_metrics(metrics, prefix=f"Evaluation Set {i:0{len(eval_loaders)}d}: ")
+                    logger.log_metrics(metrics, prefix=f"{name} set: ")
                 # Save model checkpoint
                 if cfg.save_every.batch > 0 and n_batches % cfg.save_every.batch == 0:
                     ckpt_fn = f"ckpt_batch-{n_batches}.pth"

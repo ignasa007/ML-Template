@@ -1,10 +1,10 @@
-from typing import Union, Callable, Tuple
+from typing import Any, Tuple, Iterable, Callable, Union
 
 from torch import Tensor, device as Device
 from torch.utils.data import default_collate, Dataset
 
 
-def base_preprocess(sample):
+def base_preprocess(sample: Iterable[Any]):
     
     """
     Any methods/classes needed to preprocess the data.
@@ -25,7 +25,7 @@ def base_preprocess(sample):
     return sample
 
 
-def base_collate(batch):
+def base_collate(batch: Iterable[Iterable[Tensor]]):
 
     """
     Collate functions could be used for (amongst other things):
@@ -34,11 +34,11 @@ def base_collate(batch):
         3. simply preparing the input for the model
 
     Args:
-        batch (List): a list of B samples.
+        batch (Iterable): a list of B samples.
             eg. [(image_1, label_1), ..., (image_B, label_B)]
 
     Return:
-        loader_iterates (List): processed samples, as returned by data loader 
+        loader_iterates (Iterable): processed samples, as returned by data loader 
             eg. [(image_1, ..., image_B), (label_1, ..., label_B)]
     """
 
@@ -68,7 +68,7 @@ class BaseDataset(Dataset):
         """Return the number of samples in the dataset."""
         raise NotImplementedError
     
-    def __getitem__(self, key: Union[int, str]) -> Tuple[Tensor]:
+    def __getitem__(self, key: Union[int, str]) -> Tuple[Tensor, ...]:
         """Return a sample from the dataset, e.g. (image_i, label_i)."""
         raise NotImplementedError
     
