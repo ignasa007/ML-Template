@@ -5,7 +5,7 @@ from torch.utils.data import default_collate, Dataset
 
 
 def base_preprocess(sample: Iterable[Any]):
-    
+
     """
     Any methods/classes needed to preprocess the data.
     This is different from collate function in that collate processes a batch of samples at a time.
@@ -17,7 +17,7 @@ def base_preprocess(sample: Iterable[Any]):
         sample (Iterable): a collection of objects forming a sample.
             eg. (image_1, label_1)
 
-    Return:
+    Returns:
         dataset_iterate (Iterable): preprocessed sample
             eg. (preprocessed_image_1, preprocessed_label_1)
     """
@@ -37,8 +37,8 @@ def base_collate(batch: Iterable[Iterable[Tensor]]):
         batch (Iterable): a list of B samples.
             eg. [(image_1, label_1), ..., (image_B, label_B)]
 
-    Return:
-        loader_iterates (Iterable): processed samples, as returned by data loader 
+    Returns:
+        loader_iterates (Iterable): processed samples, as returned by data loader
             eg. [(image_1, ..., image_B), (label_1, ..., label_B)]
     """
 
@@ -49,7 +49,7 @@ def base_collate(batch: Iterable[Iterable[Tensor]]):
 class BaseDataset(Dataset):
     """
     Base class for all data classes to import.
-    
+
     Class attributes should be those that don't need to change from run to run,
         eg. preprocessor, collater
 
@@ -67,11 +67,11 @@ class BaseDataset(Dataset):
     def __len__(self) -> int:
         """Return the number of samples in the dataset."""
         raise NotImplementedError
-    
+
     def __getitem__(self, key: Union[int, str]) -> Tuple[Tensor, ...]:
         """Return a sample from the dataset, e.g. (image_i, label_i)."""
         raise NotImplementedError
-    
+
     def to(self, device: Device) -> None:
         """Transfer the samples to `device`."""
         raise NotImplementedError

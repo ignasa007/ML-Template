@@ -10,12 +10,12 @@ def default_cfg() -> CfgNode:
     The default configuration object for the experiments.
         - Need to register all configurations that are expected.
 
-    Return:
+    Returns:
         _C: A configuration object with placeholder values.
     """
 
     _C = CfgNode()
-    _C.device = None
+    _C.exp_dir = None
 
     # Dataloader parameters
     _C.loader = CfgNode()
@@ -40,7 +40,7 @@ def default_cfg() -> CfgNode:
 
 
 class Config:
-    
+
     def __init__(self, root: str, args: Namespace):
 
         """

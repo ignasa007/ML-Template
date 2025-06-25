@@ -14,7 +14,7 @@ def get_activation(activation_name: str) -> nn.Module:
     Function to map activation name to activation class.
     Args:
         activation_name (str): name of the activation function
-    Return:
+    Returns:
         activation_class (nn.Module): a piecewise activation function
     """
 
@@ -25,7 +25,7 @@ def get_activation(activation_name: str) -> nn.Module:
             "".join(f'\n\t- {valid_activation_name},' for valid_activation_name in map.keys()) +
             f"\nbut got `{activation_name}`."
         )
-    
+
     activation_class = map.get(formatted_activation_name)
-    
+
     return activation_class

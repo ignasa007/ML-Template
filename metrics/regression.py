@@ -1,53 +1,41 @@
 from yacs.config import CfgNode
 from torch import Tensor
-from torchmetrics import Metric, MeanAbsoluteError, MeanAbsolutePercentageError, MeanSquaredError
+import torchmetrics
 
 from metrics.base import BaseMetric
-    
+
 
 class RegressionMetric(BaseMetric):
     # TODO: multi-dimensional regression?
     name: str
-    BaseMetric: Metric
-    
-    def __init__(self, cfg: CfgNode):
-        self.base_metric = self.BaseMetric()
+    underlying_metric: torchmetrics.Metric
+
+    def __init__(self, underlying_metric_class, cfg):
+        self.underlying_metric = underlying_metric_class()
 
     def reset(self) -> None:
-        self.base_metric.reset()
-    
-    def forward(self, out: Tensor, target: Tensor) -> Tensor:
-        out = out.reshape(target.shape)
-        metric = self.base_metric.forward(out, target)
-        return metric
-    
+        self.underlying_metric.reset()
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        preds = preds.reshape(target.shape)
+        value = self.underlying_metric.forward(preds, target)
+        return value
+
     def compute(self) -> Tensor:
-        return self.base_metric.compute()
+        return self.underlying_metric.compute()
 
 
-class MSE(RegressionMetric):
+class MeanSquaredError(RegressionMetric):
     name = 'Mean Squared Error'
-    BaseMetric = MeanSquaredError
-    
+    def __init__(self, cfg: CfgNode):
+        super(MeanSquaredError, self).__init__(torchmetrics.MeanSquaredError, cfg)
 
-class MAE(RegressionMetric):
+class MeanAbsoluteError(RegressionMetric):
     name = 'Mean Absolute Error'
-    BaseMetric = MeanAbsoluteError
+    def __init__(self, cfg: CfgNode):
+        super(MeanAbsoluteError, self).__init__(torchmetrics.MeanAbsoluteError, cfg)
 
-
-class MAPE(RegressionMetric):
+class MeanAbsolutePercentageError(RegressionMetric):
     name = 'Mean Absolute Percentage Error'
-    BaseMetric = MeanAbsolutePercentageError
-
-
-# class MAPE(MeanAbsolutePercentageError):
-
-#     name = 'Mean Absolute Percentage Error'
-    
-#     def __init__(self, cfg: CfgNode):
-#         super(MSE, self).__init__()
-    
-#     def forward(self, out: Tensor, target: Tensor):
-#         out = out.reshape(target.shape)
-#         metric = super(MAPE, self).forward(out, target)
-#         return metric
+    def __init__(self, cfg: CfgNode):
+        super(MeanAbsolutePercentageError, self).__init__(torchmetrics.MeanAbsolutePercentageError, cfg)

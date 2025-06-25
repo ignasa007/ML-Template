@@ -1,21 +1,20 @@
-from typing import Dict
+from typing import Tuple, List
 
 from torch import Tensor
 from torch.optim import Optimizer
 
 from models import BaseArchitecture
-from metrics import Results
+from metrics import ResultsTracker
 
 
 def train_batch(
     input,
     target: Tensor,
     model: BaseArchitecture,
-    objective: str,
     optimizer: Optimizer,
-    results: Results
-) -> Dict[str, Tensor]:
-    
+    results: ResultsTracker
+) -> List[Tuple[str, Tensor]]:
+
     """
     Evaluate the model on a batch from the train set.
     Set train/eval mode before passing the model.
@@ -32,7 +31,8 @@ def train_batch(
     out = model(input)
     metrics = results.forward(out, target)
 
-    metrics[objective].backward()
+    objective_name, objective_value = metrics[0]
+    objective_value.backward()
     optimizer.step()
 
     return metrics

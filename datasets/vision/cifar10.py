@@ -16,7 +16,7 @@ def load_cifar10(cfg: CfgNode):
         dataset.data = dataset.data[indices]
         dataset.targets = [dataset.targets[i] for i in indices]
         return dataset
-    
+
     # SPLIT TRAINING SET
     train_set = CIFAR10Torch(**common_kwargs, train=True, **train_kwargs)
     total_size = len(train_set)

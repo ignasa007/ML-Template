@@ -24,15 +24,15 @@ def get_loaders(
         datasets (List[data.base.BaseDataset, ...]): list of datasets, e.g. train, val, test.
         cfg (yacs.CfgNode): experiment configurations.
         device (torch.device): target device for requested samples
-    
-    Return:
+
+    Returns:
         data_loaders (List[torch.utils.data.DataLoader, ...]): list of data-loaders.
     """
 
     data_loaders = list()
-    
+
     for dataset in datasets:
-        
+
         if device.type == "cpu":
             dataset.to(device)
         elif device.type == "cuda":
@@ -49,7 +49,7 @@ def get_loaders(
         kwargs["pin_memory"] = dataset.storage_device.type == "cpu" \
             and dataset.target_device.type == "cuda" \
             and cfg.laoder.pin_memory
-            
+
         data_loaders.append(DataLoader(
             dataset,
             batch_size=cfg.dataset.batch_size,

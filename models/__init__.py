@@ -1,1 +1,1 @@
-from models.architectures import get_architecture, BaseArchitecture
+from models.architectures import get_model, BaseArchitecture

@@ -15,10 +15,10 @@ def get_transform(transform_name: str, cfg: CfgNode) -> nn.Module:
     Args:
         transform_name (str): name of the transform used for the experiment.
         cfg (yacs.CfgNode): experiment configurations.
-    Return:
+    Returns:
         transform_class (nn.Module): a transform class.
     """
-    
+
     formatted_transform_name = transform_name.lower()
     if formatted_transform_name not in map:
         raise ValueError(
@@ -26,9 +26,9 @@ def get_transform(transform_name: str, cfg: CfgNode) -> nn.Module:
             "".join(f'\n\t- {valid_transform_name},' for valid_transform_name in map.keys()) +
             f"\nbut got `{transform_name}`."
         )
-    
+
     transform_class = map.get(formatted_transform_name)
-    
+
     return transform_class(cfg)
 
 
@@ -40,18 +40,18 @@ def compose(cfg: CfgNode, train: bool) -> Tuple[Compose, Compose]:
     Args:
         cfg (yacs.CfgNode): experiment configurations.
         train (bool): Boolean indicating whether transforming training or evaluation set.
-    Return:
+    Returns:
         transform_class (nn.Module): a transform class.
     """
 
     input_transforms = list()
     for transform_name in cfg.dataset.common_transforms.input:
         input_transforms.append(get_transform(transform_name))
-    
+
     target_transforms = list()
     for transform_name in cfg.dataset.common_transforms.target:
         target_transforms.append(get_transform(transform_name))
-    
+
     if train:
         for transform_name in cfg.dataset.train_transforms.input:
             input_transforms.append(get_transform(transform_name))

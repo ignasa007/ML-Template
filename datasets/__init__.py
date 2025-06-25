@@ -1,6 +1,6 @@
 """
 __init__ file for data classes.
-imports all the data classes and creates a function to map the 
+imports all the data classes and creates a function to map the
     dataset name to the data class.
 """
 
@@ -27,18 +27,18 @@ def get_dataset(
     Args:
         dataset_name (str): name of the dataset used for the experiment.
         cfg (yacs.CfgNode): experiment configurations.
-    Return:
+    Returns:
         dataset_class (torch.data.BaseDataset): a data class.
     """
-    
+
     formatted_dataset_name = dataset_name.lower()
     if formatted_dataset_name not in map:
         raise ValueError(
             "Parameter `dataset_name` not recognized. Expected one of" +
-            "".join(f'\n\t- {valid_dataset_name},' for valid_dataset_name in map.keys()) +
+            "".join(f'\n\t- {name},' for name in map.keys()) +
             f"\nbut got `{dataset_name}`."
         )
-    
+
     dataset_class = map.get(formatted_dataset_name)
-    
+
     return dataset_class(cfg)

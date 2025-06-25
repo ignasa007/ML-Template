@@ -1,13 +1,11 @@
-from typing import Union
-
 from yacs.config import CfgNode
 from torch import Tensor, sigmoid, softmax
 from torch.nn.functional import binary_cross_entropy_with_logits, cross_entropy
-from torchmetrics import Accuracy, F1Score, AUROC
+import torchmetrics
 
 from metrics.base import BaseMetric
 
-    
+
 class CELoss(BaseMetric):
 
     name = 'Cross Entropy Loss'
@@ -17,20 +15,20 @@ class CELoss(BaseMetric):
         num_classes = cfg.dataset.num_classes
         if not isinstance(num_classes, int):
             raise TypeError(f'Expected `cfg.dataset.num_classes` to be an instance of `int` (got {type(num_classes)}).')
-        
+
         if num_classes == 2:
             self.loss_fn = lambda out, target: binary_cross_entropy_with_logits(out, target.float(), reduction='sum')
         elif num_classes > 2:
             self.loss_fn = lambda out, target: cross_entropy(out, target, reduction='sum')
         else:
             raise ValueError(f'Expected `cfg.dataset.num_classes` to be >1 (got {num_classes}).')
-        
+
         super(CELoss, self).__init__()
-        
+
     def reset(self) -> None:
         self.total_loss = 0
         self.total_samples = 0
-    
+
     def forward(self, out: Tensor, target: Tensor) -> Tensor:
 
         # Squeeze to make the output compatible for BCE loss
@@ -50,54 +48,55 @@ class CELoss(BaseMetric):
     def compute(self) -> Tensor:
         avg_loss = self.total_loss / self.total_samples
         return avg_loss
-    
+
 
 class ClassificationMetric(BaseMetric):
 
     name: str
-    BaseMetric: Union[Accuracy, F1Score, AUROC]
+    underlying_metric: torchmetrics.Metric
 
-    def __init__(self, cfg: CfgNode):
+    def __init__(self, underlying_metric_class, cfg):
 
         num_classes = cfg.dataset.num_classes
-        if not isinstance(self.num_classes, int):
-            raise TypeError(f'Expected `cfg.dataset.num_classes` to be an instance of `int` (got {type(num_classes)}).')
-        
+        if not isinstance(num_classes, int):
+            raise TypeError(
+                f"Expected `num_classes` to be an `int` greater than 1" \
+                f" (got {num_classes=} of type {type(num_classes).__name__})."
+            )
+
         if num_classes == 2:
             self.compute_proba = sigmoid
-            # Not sure if it is best practice to access BaseMetric through self
-            self.base_metric = self.BaseMetric(task="binary")
-        elif num_classes > 2:
-            self.compute_proba = lambda probs: softmax(probs, dim=-1)
-            self.base_metric = self.BaseMetric(task="multiclass", num_classes=num_classes)
+            self.underlying_metric = underlying_metric_class(task="binary")
         else:
-            raise ValueError(f'Expected `cfg.dataset.num_classes` to be >1 (got {num_classes}).')
-        
+            self.compute_proba = lambda probs: softmax(probs, dim=-1)
+            self.underlying_metric = underlying_metric_class(task="multiclass", num_classes=num_classes)
+
         super(ClassificationMetric, self).__init__()
-        
+
     def reset(self) -> None:
-        self.base_metric.reset()
-    
+        self.underlying_metric.reset()
+
     def forward(self, out: Tensor, target: Tensor) -> Tensor:
         # Other metrics expect (rather, can work with) probabilities, but not logits
         proba = self.compute_proba(out)
-        metric = self.base_metric.forward(proba, target)
+        metric = self.underlying_metric.forward(proba, target)
         return metric
 
     def compute(self) -> Tensor:
-        return self.base_metric.compute()
-    
+        return self.underlying_metric.compute()
+
 
 class Accuracy(ClassificationMetric):
     name = 'Accuracy'
-    BaseMetric = Accuracy
-
+    def __init__(self, cfg: CfgNode):
+        super(Accuracy, self).__init__(torchmetrics.Accuracy, cfg)
 
 class F1Score(ClassificationMetric):
     name = 'F1 Score'
-    BaseMetric = F1Score
-    
+    def __init__(self, cfg: CfgNode):
+        super(Accuracy, self).__init__(torchmetrics.F1Score, cfg)
 
 class AUROC(ClassificationMetric):
     name = 'AUROC'
-    BaseMetric = AUROC
+    def __init__(self, cfg: CfgNode):
+        super(Accuracy, self).__init__(torchmetrics.AUROC, cfg)

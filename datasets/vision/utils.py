@@ -13,13 +13,13 @@ def interpret_size_as_int(size, total):
         return size
     else:
         raise ValueError(f"Received invalid size: `{size=}`, `type(size) = {type(size).__name__}`.")
-    
+
 def get_split_indices(
     main_size: Union[float, int, None],
     other_sizes: Optional[List[Union[float, int, None]]],
     total_size: int
 ) -> Tuple[torch.Tensor, List[torch.Tensor]]:
-    
+
     """
     Get random indices for splitting datasets.
     Args:
@@ -35,31 +35,31 @@ def get_split_indices(
         - If `main_size` is None, it is assigned the remaining samples.
     Treating integer sizes: any integer size is used exactly
     Treating float sizes: any float size is treated as a fraction of `total_size`.
-    If the sizes are float or None (-> 0.), and sum close to 1, then 
+    If the sizes are float or None (-> 0.), and sum close to 1, then
         - assign any remaining samples in a round-robin fashion,
         - starting with `main_size`.
     """
-    
+
     NoneType = type(None)
-    
+
     if other_sizes is None:
         other_sizes = list()
     original_sizes = [main_size] + other_sizes
-    
+
     if not (
         all((isinstance(size, (int, NoneType)) for size in original_sizes)) or
         all((isinstance(size, (float, NoneType)) for size in original_sizes))
     ):
         raise TypeError(f"Received mixed types: `type(main_size) = {type(main_size).__name__}`, " \
             f"`type(other_sizes) = ({', '.join((type(size).__name__ for size in other_sizes))})`.")
-    
+
     for i, size in enumerate(other_sizes):
         # In case size is passed but as integer 0, it will fail type check below
         if size is None:
             other_sizes[i] = 0
 
     # INTERPRET SIZES AS INTEGERS
-    
+
     main_size = interpret_size_as_int(main_size, total_size)
     if not (main_size is None or 0. < main_size <= total_size):
         raise ValueError(
@@ -74,7 +74,7 @@ def get_split_indices(
                 f" Derived from `other_sizes[i]={original_sizes[i+1]}` and `{total_size=}`."
             )
         other_sizes[i] = other_size
-    
+
     all_sizes = [main_size] + other_sizes
     if main_size is None:
         # Assign the rest to training
@@ -88,7 +88,7 @@ def get_split_indices(
         # Assign remainder only if all sizes requested are fractions and almost sum to 1
         # Absolute tolerance = 1%, e.g. reassigns for 0.33 and 0.66, but not 0.3 and 0.6
         if (
-            all((isinstance(size, (float, NoneType)) for size in original_sizes)) and 
+            all((isinstance(size, (float, NoneType)) for size in original_sizes)) and
             abs(1 - sum((size if size is not None else 0. for size in original_sizes))) <= 1e-2
         ):
             pointer = 0
@@ -97,9 +97,9 @@ def get_split_indices(
                     all_sizes[pointer] += 1
                     remainder -= 1
                 pointer = pointer+1 if pointer < len(all_sizes)-1 else 0
-    
+
     # GET RANDOM INDICES
-    
+
     all_indices = torch.randperm(total_size)
     main_indices, *other_indices = [
         all_indices[offset-length:offset]

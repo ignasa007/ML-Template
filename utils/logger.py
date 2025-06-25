@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Union, List, Tuple, Dict
 from argparse import Namespace
 import os
 from datetime import datetime
@@ -16,20 +16,20 @@ class Logger:
     @staticmethod
     def timestamp() -> str:
         return datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    
+
     @staticmethod
     def process_kwargs(**kwargs) -> Dict[str, Any]:
         if "kwargs" in kwargs:
             kwargs.update(kwargs.pop("kwargs"))
         return kwargs
-    
+
     @staticmethod
     def sci_notation(x: Union[int, float], decimals: int = 6, strip: bool = True) -> str:
         mantissa, exponent = f"{x:.{decimals}e}".split("e")
         if strip:
             mantissa = mantissa.rstrip("0").rstrip(".")
         return mantissa + f"e{exponent}"
-    
+
     @staticmethod
     def fix_ext(fn: str, default_ext: str, force_ext: bool = False):
         assert len(default_ext) > 1
@@ -42,17 +42,14 @@ class Logger:
             return root + default_ext
 
     def __init__(self, args: Namespace, cfg: CfgNode):
-
         """
-        Initialize the logging directory:
-            ./results/<dataset>/<architecture>/.../<datetime>/
-
+        Initialize the logging directory.
         Args:
-            args (Namespace): command-line arguments.
-            cfg (CfgNode): configurations picked from ./config/.
+            args (argparse.Namespace): command-line arguments.
+            cfg (yacs.CfgNode): configurations picked from ./config/.
         """
-        
-        self.EXP_DIR = f"./results/{cfg.dataset}/{cfg.architecture}/{Logger.timestamp()}"
+
+        self.EXP_DIR = cfg.exp_dir
         self.OBJECTS_DIR = f"{self.EXP_DIR}/objects"
         os.makedirs(self.OBJECTS_DIR)
         self.save_objects(args=args, cfg=cfg)
@@ -63,17 +60,15 @@ class Logger:
         self.log(cfg.dump(indent=4), with_time=False)
 
     def log(self, text: str, with_time: bool = True, print_text: bool = False) -> None:
-        
         """
         Write logs to the the logging file: ./<EXP_DIR>/logs
-        
         Args:
             text (str): text to write to the log file.
             with_time (bool): prepend text with datetime of writing.
             print_text (bool): print the text to console, in addition
                 to writing it to the log file.
         """
-        
+
         if print_text:
             print(text)
         if with_time:
@@ -83,7 +78,7 @@ class Logger:
 
     def log_metrics(
         self,
-        metrics: Dict[str, Tensor],
+        metrics: List[Tuple[str, Tensor]],
         prefix: str = '',
         with_time: bool = True,
         print_text: bool = False
@@ -91,19 +86,16 @@ class Logger:
 
         formatted_metrics = prefix
         formatted_metrics += ", ".join(
-            f"{metric} = {Logger.sci_notation(value.item(), decimals=6, strip=False)}" 
-            for metric, value in metrics
+            f"{name} = {Logger.sci_notation(value.item(), decimals=6, strip=False)}"
+            for name, value in metrics
         )
         self.log(formatted_metrics, with_time, print_text)
 
     def save_objects(self, **kwargs) -> None:
-        
         """
         Save Python objects as (binary) pickle files.
-        
         Args:
             kwargs (Dict[str, Object]): <value> to be saved into <key>.pickle
-        
         Args can be passed as
             - `Logger.save_objects(a=1, b=2, c=3, d=4)`
             - `Logger.save_objects(kwargs={"a": 1, "b": 2}, c=3, d=4)`
@@ -111,7 +103,7 @@ class Logger:
         In each case, the kwargs will be transformed as
             `kwargs = {"a": 1, "b": 2, "c": 3, "d": 4}`
         """
-        
+
         kwargs = Logger.process_kwargs(kwargs)
         for fn, obj in kwargs.items():
             fn = Logger.fix_ext(fn, default_ext=".pickle")
@@ -120,7 +112,7 @@ class Logger:
 
     def save_arrays(self, **kwargs) -> None:
         """Save NumPy arrays."""
-        
+
         kwargs = Logger.process_kwargs(kwargs)
         for fn, arr in kwargs.items():
             assert isinstance(arr, np.ndarray), \
@@ -130,7 +122,7 @@ class Logger:
 
     def save_tensors(self, **kwargs) -> None:
         """Save PyTorch tensors."""
-        
+
         kwargs = Logger.process_kwargs(kwargs)
         for fn, tensor in kwargs.items():
             assert isinstance(tensor, Tensor), \
