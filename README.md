@@ -59,8 +59,9 @@ Notes:
 - The project supports up to 1 GPU per run, since I don't know how to distribute computing over multiple GPUs :').
 - We don't support `ReduceLROnPlateau` scheduler because its API doesn't tie well with the rest of the project's organization.
 
-TODO:
-- Add support for dropout
-- Add support for residual connections
-- Implement `LazyLayerNorm`
-- Figure out how to handle multidimensional regression metrics
+## TODO
+
+- [ ] Add support for dropout
+- [ ] Add support for residual connections
+- [ ] Implement `LazyLayerNorm`
+- [ ] Figure out how to handle multidimensional regression metrics
