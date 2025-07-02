@@ -51,10 +51,16 @@ python3 -m main \
     --architecture ${architecture} \
     --device_index ${CUDA_VISIBLE_DEVICES} \
     data.batch_size 64 \
-    model.width 256
+    architecture.conv.num_channels 32*3
 ```
 
 Notes:
 - Make sure to omit `--device_index` if you do not wish to use a GPU.
 - The project supports up to 1 GPU per run, since I don't know how to distribute computing over multiple GPUs :').
 - We don't support `ReduceLROnPlateau` scheduler because its API doesn't tie well with the rest of the project's organization.
+
+TODO:
+- Add support for dropout
+- Add support for residual connections
+- Implement `LazyLayerNorm`
+- Figure out how to handle multidimensional regression metrics
