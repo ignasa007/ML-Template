@@ -48,7 +48,7 @@ def get_loaders(
         kwargs = dict(cfg.loader)
         kwargs["pin_memory"] = dataset.storage_device.type == "cpu" \
             and dataset.target_device.type == "cuda" \
-            and cfg.laoder.pin_memory
+            and cfg.loader.pin_memory
 
         data_loaders.append(DataLoader(
             dataset,

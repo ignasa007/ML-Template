@@ -8,20 +8,20 @@ from metrics.base import BaseMetric
 
 class CELoss(BaseMetric):
 
-    name = 'Cross Entropy Loss'
+    name = "Cross Entropy Loss"
 
     def __init__(self, cfg: CfgNode):
 
-        num_classes = cfg.dataset.num_classes
-        if not isinstance(num_classes, int):
-            raise TypeError(f'Expected `cfg.dataset.num_classes` to be an instance of `int` (got {type(num_classes)}).')
+        output_dim = cfg.dataset.output_dim
+        if not isinstance(output_dim, int):
+            raise TypeError(f"Expected `cfg.dataset.output_dim` to be an `int` (got {type(output_dim)}).")
 
-        if num_classes == 2:
-            self.loss_fn = lambda out, target: binary_cross_entropy_with_logits(out, target.float(), reduction='sum')
-        elif num_classes > 2:
-            self.loss_fn = lambda out, target: cross_entropy(out, target, reduction='sum')
+        if output_dim == 1:
+            self.loss_fn = lambda out, target: binary_cross_entropy_with_logits(out, target.float(), reduction="sum")
+        elif output_dim > 1:
+            self.loss_fn = lambda out, target: cross_entropy(out, target, reduction="sum")
         else:
-            raise ValueError(f'Expected `cfg.dataset.num_classes` to be >1 (got {num_classes}).')
+            raise ValueError(f"Expected `cfg.dataset.output_dim` to be >=1 (got {output_dim}).")
 
         super(CELoss, self).__init__()
 
@@ -57,20 +57,18 @@ class ClassificationMetric(BaseMetric):
 
     def __init__(self, underlying_metric_class, cfg):
 
-        num_classes = cfg.dataset.num_classes
-        if not isinstance(num_classes, int):
-            raise TypeError(
-                f"Expected `num_classes` to be an `int` greater than 1" \
-                f" (got {num_classes=} of type {type(num_classes).__name__})."
-            )
+        output_dim = cfg.dataset.output_dim
+        if not isinstance(output_dim, int):
+            raise TypeError(f"Expected `num_classes` to be an `int` (got {type(output_dim).__name__}).")
 
-        if num_classes == 2:
+        if output_dim == 1:
             self.compute_proba = sigmoid
             self.underlying_metric = underlying_metric_class(task="binary")
-        else:
+        elif output_dim > 1:
             self.compute_proba = lambda probs: softmax(probs, dim=-1)
-            self.underlying_metric = underlying_metric_class(task="multiclass", num_classes=num_classes)
-
+            self.underlying_metric = underlying_metric_class(task="multiclass", num_classes=output_dim)
+        else:
+            raise ValueError(f"Expected `cfg.dataset.output_dim` to be >=1 (got {output_dim}).")
         super(ClassificationMetric, self).__init__()
 
     def reset(self) -> None:
@@ -87,16 +85,16 @@ class ClassificationMetric(BaseMetric):
 
 
 class Accuracy(ClassificationMetric):
-    name = 'Accuracy'
+    name = "Accuracy"
     def __init__(self, cfg: CfgNode):
         super(Accuracy, self).__init__(torchmetrics.Accuracy, cfg)
 
 class F1Score(ClassificationMetric):
-    name = 'F1 Score'
+    name = "F1 Score"
     def __init__(self, cfg: CfgNode):
         super(Accuracy, self).__init__(torchmetrics.F1Score, cfg)
 
 class AUROC(ClassificationMetric):
-    name = 'AUROC'
+    name = "AUROC"
     def __init__(self, cfg: CfgNode):
         super(Accuracy, self).__init__(torchmetrics.AUROC, cfg)

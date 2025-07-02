@@ -19,6 +19,8 @@ class Logger:
 
     @staticmethod
     def process_kwargs(**kwargs) -> Dict[str, Any]:
+        # Expecting kwargs["kwargs"] to be a dictionary in itself
+        #   => update kwargs with kwargs["kwargs"]
         if "kwargs" in kwargs:
             kwargs.update(kwargs.pop("kwargs"))
         return kwargs
@@ -79,7 +81,7 @@ class Logger:
     def log_metrics(
         self,
         metrics: List[Tuple[str, Tensor]],
-        prefix: str = '',
+        prefix: str = "",
         with_time: bool = True,
         print_text: bool = False
     ) -> None:

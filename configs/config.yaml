@@ -1,20 +1,25 @@
 # Experiment configurations
 
-train:
-	log_every:
-		batch: 1
-		epoch: 1
-
-eval:
-	log_every:
-		batch: -1
-		epoch: 1
-
-save_every:
-	batch: -1
-	epoch: -1
+exp_dir: null
 
 loader:
 	shuffle: true
 	num_workers: 2
 	pin_memory: true
+	
+train:
+	accum_grad: 1
+	stop:
+		batches: 10000
+		epochs: null
+	log:
+		batches: 1
+		epoches: 1
+
+eval:
+	batches: -1
+	epoches: 1
+
+save:
+	batches: -1
+	epochs: -1

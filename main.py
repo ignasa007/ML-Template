@@ -29,6 +29,8 @@ device = torch.device(f"cuda:{args.device_index}" if torch.cuda.is_available() a
 
 logger.log("Loading and pre-processing datasets...", print_text=True)
 training_dataset, evaluation_datasets = get_dataset(args.dataset, cfg)
+# Not sure what the point is of this if we can use lazy initialization of modules
+cfg.dataset.input_dim = training_dataset.input_dim
 logger.log("Finished pre-processing datasets.\n", print_text=True)
 
 logger.log("Preparing data-loaders...", print_text=True)
@@ -113,8 +115,8 @@ n_epochs = n_batches = 0
 
 # START TRAINING
 while (
-    (cfg.train.total_batches is None or n_batches < cfg.train.total_batches) and
-    (cfg.train.total_epochs is None or n_epochs < cfg.train.total_epochs)
+    (cfg.train.stop.batches is None or n_batches < cfg.train.stop.batches) and
+    (cfg.train.stop.epochs is None or n_epochs < cfg.train.stop.epochs)
 ):
 
     # Book-keeping
@@ -140,7 +142,7 @@ while (
         # BACKWARD PROPAGATION
         objective_name, objective_value = metrics[0]
         objective_value.backward()
-        if n_batches % cfg.train.update_every == 0:
+        if n_batches % cfg.train.accum_grad == 0:
             # Update parameters
             optimizer.step()
             optimizer.zero_grad()
@@ -149,35 +151,35 @@ while (
             pass
 
         # UPDATE LEARNING RATE
-        if isinstance(cfg.scheduler.step_every.batch, int) and (
-            # Update learning rate every `cfg.scheduler.step_every.batch` batches trained
-            cfg.scheduler.step_every.batch > 0 and n_batches % cfg.scheduler.step_every.batch == 0
+        if isinstance(cfg.scheduler.step.batches, int) and (
+            # Update learning rate every `cfg.scheduler.step.batches` batches trained
+            cfg.scheduler.step.batches > 0 and n_batches % cfg.scheduler.step.batches == 0
         ):
             scheduler.step()
 
         # LOG BATCH METRICS
-        if isinstance(cfg.train.log_every.batch, int) and (
-            # Log batch metrics every `cfg.train.log_every.batch` batches trained
-            cfg.train.log_every.batch > 0 and n_batches % cfg.train.log_every.batch == 0 or
+        if isinstance(cfg.train.log.batches, int) and (
+            # Log batch metrics every `cfg.train.log.batches` batches trained
+            cfg.train.log.batches > 0 and n_batches % cfg.train.log.batches == 0 or
             # Log batch metrics at the end of each epoch
-            cfg.train.log_every.batch == -1 and hasattr(training_loader, "__len__") and n_batches % len(training_loader) == 0
+            cfg.train.log.batches == -1 and hasattr(training_loader, "__len__") and n_batches % len(training_loader) == 0
         ):
             training_metrics = [("Training", metrics)]
             _ = log_metrics(logger, training_metrics, batch_header)
             batch_header = None
 
         # EVALUATE MODEL
-        if isinstance(cfg.eval.log_every.batch, int) and (
-            # Evaluate after every `cfg.eval.log_every.batch` batches trained
-            cfg.eval.log_every.batch > 0 and n_batches % cfg.eval.log_every.batch == 0
+        if isinstance(cfg.eval.batches, int) and (
+            # Evaluate after every `cfg.eval.batches` batches trained
+            cfg.eval.batches > 0 and n_batches % cfg.eval.batches == 0
         ):
             evaluation_metrics = evaluate_model(logger, model, evaluation_loaders, batch_header)
             batch_header, evaluated_this_batch = None, True
 
         # SAVE MODEL CHECKPOINT
-        if isinstance(cfg.save_every.batch, int) and (
-            # Save checkpoint after every `cfg.save_every.batch` batches trained
-            cfg.save_every.batch > 0 and n_batches % cfg.save_every.batch == 0
+        if isinstance(cfg.save.batches, int) and (
+            # Save checkpoint after every `cfg.save.batches` batches trained
+            cfg.save.batches > 0 and n_batches % cfg.save.batches == 0
         ):
             ckpt_file_name = f"ckpt_batch-{n_batches}.pth"
             _ = save_checkpoint(logger, model.state_dict(), ckpt_file_name, batch_header)
@@ -187,28 +189,32 @@ while (
         if batch_header is None:
             logger.log("", with_time=False)
 
+        # Break if completed training required number of batches
+        if isinstance(cfg.train.stop.batches, int) and n_batches >= cfg.train.stop.batches:
+            break
+
     # UPDATE LEARNING RATE
-    if isinstance(cfg.scheduler.step_every.epoch, int) and (
-        # Update learning rate every `cfg.scheduler.step_every.epoch` epochs trained
-        cfg.scheduler.step_every.epoch > 0 and n_epochs % cfg.scheduler.step_every.epoch == 0
+    if isinstance(cfg.scheduler.step.epochs, int) and (
+        # Update learning rate every `cfg.scheduler.step.epochs` epochs trained
+        cfg.scheduler.step.epochs > 0 and n_epochs % cfg.scheduler.step.epochs == 0
     ):
         scheduler.step()
 
     # LOG EPOCH METRICS
-    if isinstance(cfg.train.log_every.epoch, int) and (
-        # Log aggregated training metrics every `cfg.train.log_every.epoch` epochs trained
-        cfg.train.log_every.epoch > 0 and n_epochs % cfg.train.log_every.epoch == 0
+    if isinstance(cfg.train.log.epochs, int) and (
+        # Log aggregated training metrics every `cfg.train.log.epochs` epochs trained
+        cfg.train.log.epochs > 0 and n_epochs % cfg.train.log.epochs == 0
     ):
         train_metrics = [("Training", training_results_tracker.compute())]
         _ = log_metrics(logger, train_metrics, epoch_header)
         epoch_header = None
 
     # EVALUATE MODEL
-    if isinstance(cfg.eval.log_every.epoch, int) and (
-        # Evaluate after every `cfg.eval.log_every.epoch` epochs trained
-        cfg.eval.log_every.epoch > 0 and n_epochs % cfg.eval.log_every.epoch == 0 or
+    if isinstance(cfg.eval.epochs, int) and (
+        # Evaluate after every `cfg.eval.epochs` epochs trained
+        cfg.eval.epochs > 0 and n_epochs % cfg.eval.epochs == 0 or
         # Evaluate at the end of training
-        cfg.eval.log_every.epoch == -1 and n_epochs == cfg.train.total_epochs
+        cfg.eval.epochs == -1 and n_epochs == cfg.train.stop.epochs
     ):
         if evaluated_this_batch:
             log_metrics(logger, evaluation_metrics, epoch_header)
@@ -217,11 +223,11 @@ while (
         epoch_header = None
 
     # SAVE MODEL CHECKPOINT
-    if isinstance(cfg.save_every.epoch, int) and (
-        # Save checkpoint after every `cfg.save_every.epoch` epochs trained
-        cfg.save_every.epoch > 0 and n_epochs % cfg.save_every.epoch == 0 or
+    if isinstance(cfg.save.epochs, int) and (
+        # Save checkpoint after every `cfg.save.epochs` epochs trained
+        cfg.save.epochs > 0 and n_epochs % cfg.save.epochs == 0 or
         # Save checkpoint at the end of training
-        cfg.save_every.epoch == -1 and n_epochs == cfg.train.total_epochs
+        cfg.save.epochs == -1 and n_epochs == cfg.train.stop.epochs
     ):
         ckpt_file_name = f"ckpt_epoch-{n_epochs}.pth"
         _ = save_checkpoint(logger, model.state_dict(), ckpt_file_name, epoch_header)

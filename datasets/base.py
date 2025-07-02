@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Iterable, Callable, Union
+from typing import Any, Tuple, List, Iterable, Callable, Union
 
 from torch import Tensor, device as Device
 from torch.utils.data import default_collate, Dataset
@@ -59,6 +59,7 @@ class BaseDataset(Dataset):
 
     preprocessor: Callable
     collater: Callable
+    input_dim: List
 
     def __init__(self):
         """Initialize the BaseDataset class."""

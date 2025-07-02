@@ -7,17 +7,6 @@ from metrics.base import BaseMetric
 from metrics import classification, regression
 
 
-map = {
-    'celoss': classification.CELoss,
-    'accuracy': classification.Accuracy,
-    'f1score': classification.F1Score,
-    'auroc': classification.AUROC,
-    'mse': regression.MeanSquaredError,
-    'mae': regression.MeanAbsoluteError,
-    'mape': regression.MeanAbsolutePercentageError,
-}
-
-
 def get_metric(metric_name: str, cfg: CfgNode) -> BaseMetric:
     """
     Function to map metric name to metric class.
@@ -29,16 +18,28 @@ def get_metric(metric_name: str, cfg: CfgNode) -> BaseMetric:
     """
 
     formatted_metric_name = metric_name.lower()
-    if formatted_metric_name not in map:
-        raise ValueError(
-            "Parameter `metric_name` not recognized. Expected one of" +
-            "".join(f'\n\t- {valid_metric_name},' for valid_metric_name in map.keys()) +
-            f"\nbut got `{metric_name}`."
-        )
 
-    metric_class = map.get(formatted_metric_name)
+    if formatted_metric_name == "celoss":
+        metric_class = classification.CELoss
+    elif formatted_metric_name == "accuracy":
+        metric_class = classification.Accuracy
+    elif formatted_metric_name == "f1score":
+        metric_class = classification.F1Score
+    elif formatted_metric_name == "auroc":
+        metric_class = classification.AUROC
+    elif formatted_metric_name == "mse":
+        metric_class = regression.MeanSquaredError
+    elif formatted_metric_name == "mae":
+        metric_class = regression.MeanAbsoluteError
+    elif formatted_metric_name == "mape":
+        metric_class = regression.MeanAbsolutePercentageError
+    else:
+        raise ValueError(f"Argument `metric_name` not recognized (got `{metric_name}`).")
 
-    return metric_class(cfg)
+    # TODO: Seems like an overkill to pass the entire cfg to `metric_class`; just need `num_classes` I think
+    metric_obj = metric_class(cfg)
+
+    return metric_obj
 
 
 class ResultsTracker:

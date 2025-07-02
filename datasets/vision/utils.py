@@ -60,43 +60,42 @@ def get_split_indices(
 
     # INTERPRET SIZES AS INTEGERS
 
-    main_size = interpret_size_as_int(main_size, total_size)
-    if not (main_size is None or 0. < main_size <= total_size):
+    all_sizes = list(map(lambda size: interpret_size_as_int(size, total_size), [main_size]+other_sizes))
+    if not (all_sizes[0] is None or 0. < all_sizes[0] <= total_size):
         raise ValueError(
-            f"`main_size` must be in `(0, len(dataset)]`. Instead interpreted as `{main_size}`." \
-            f" Derived from `{main_size=}` and `{total_size=}`."
+            f"`main_size` must be in `(0, len(dataset)]`. Instead interpreted as `{all_sizes[0]}`." \
+            f" Derived from `main_size={original_sizes[0]}` and `total_size={total_size}`."
         )
-    for i, other_size in enumerate(other_sizes):
-        other_size = interpret_size_as_int(other_size, total_size)
-        if not (0. <= other_size < total_size):
+    for i in range(1, len(all_sizes)):
+        # NoneType `other_size` replaced with 0 above
+        if not (0. <= all_sizes[i] < total_size):
             raise ValueError(
-                f"`other_size` must be in `[0, len(dataset))`. Instead interpreted as `{other_size}`." \
-                f" Derived from `other_sizes[i]={original_sizes[i+1]}` and `{total_size=}`."
+                f"`other_size` must be in `[0, len(dataset))`. Instead interpreted as `{all_sizes[i]}`." \
+                f" Derived from `other_sizes[i]={original_sizes[i]}` and `total_size={total_size}`."
             )
-        other_sizes[i] = other_size
 
-    all_sizes = [main_size] + other_sizes
-    if main_size is None:
-        # Assign the rest to training
+    # Assign the rest to training
+    if all_sizes[0] is None:
         all_sizes[0] = total_size - sum(other_sizes)
-    else:
-        # Check total size is not more than the length of the dataset
-        remainder = total_size - sum(all_sizes)
-        assert remainder >= 0, \
-            f"`sum(all_sizes) ({sum(all_sizes)}) > total_size ({total_size})`." \
-            f" Derived from `main_size={original_sizes[0]}`, `other_sizes = {original_sizes[1:]}` and `{total_size=}`."
-        # Assign remainder only if all sizes requested are fractions and almost sum to 1
-        # Absolute tolerance = 1%, e.g. reassigns for 0.33 and 0.66, but not 0.3 and 0.6
-        if (
-            all((isinstance(size, (float, NoneType)) for size in original_sizes)) and
-            abs(1 - sum((size if size is not None else 0. for size in original_sizes))) <= 1e-2
-        ):
-            pointer = 0
-            while remainder > 0:
-                if isinstance(original_sizes[pointer], float) and original_sizes[pointer] > 0.:
-                    all_sizes[pointer] += 1
-                    remainder -= 1
-                pointer = pointer+1 if pointer < len(all_sizes)-1 else 0
+    
+    # Check total size is not more than the length of the dataset
+    remainder = total_size - sum(all_sizes)
+    assert remainder >= 0, \
+        f"`sum(all_sizes) ({sum(all_sizes)}) > total_size ({total_size})`. Derived from" \
+        f" `main_size={original_sizes[0]}`, `other_sizes = {original_sizes[1:]}` and `total_size={total_size}`."
+    # Assign remainder only if all sizes requested are fractions and almost sum to 1
+    # Absolute tolerance = 1%, e.g. reassigns for 0.33 and 0.66, but not 0.3 and 0.6
+    if (
+        all((isinstance(size, (float, NoneType)) for size in original_sizes)) and
+        abs(1 - sum((size if size is not None else 0. for size in original_sizes))) <= 1e-2
+    ):
+        pointer = 0
+        while remainder > 0:
+            # Assign only to sets which had non-zero float sizes
+            if isinstance(original_sizes[pointer], float) and original_sizes[pointer] > 0.:
+                all_sizes[pointer] += 1
+                remainder -= 1
+            pointer = pointer+1 if pointer < len(all_sizes)-1 else 0
 
     # GET RANDOM INDICES
 

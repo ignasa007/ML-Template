@@ -26,16 +26,16 @@ class RegressionMetric(BaseMetric):
 
 
 class MeanSquaredError(RegressionMetric):
-    name = 'Mean Squared Error'
+    name = "Mean Squared Error"
     def __init__(self, cfg: CfgNode):
         super(MeanSquaredError, self).__init__(torchmetrics.MeanSquaredError, cfg)
 
 class MeanAbsoluteError(RegressionMetric):
-    name = 'Mean Absolute Error'
+    name = "Mean Absolute Error"
     def __init__(self, cfg: CfgNode):
         super(MeanAbsoluteError, self).__init__(torchmetrics.MeanAbsoluteError, cfg)
 
 class MeanAbsolutePercentageError(RegressionMetric):
-    name = 'Mean Absolute Percentage Error'
+    name = "Mean Absolute Percentage Error"
     def __init__(self, cfg: CfgNode):
         super(MeanAbsolutePercentageError, self).__init__(torchmetrics.MeanAbsolutePercentageError, cfg)

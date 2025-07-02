@@ -1,27 +1,14 @@
 from yacs.config import CfgNode
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import (
-    LRScheduler,
-    ConstantLR,
-    StepLR,
-    MultiStepLR,
-    LinearLR,
-    ExponentialLR,
-    CosineAnnealingLR,
-    CosineAnnealingWarmRestarts,
-)
+import torch.optim.lr_scheduler as scheduler
 
-map = {
-    'constant': ConstantLR,
-    'step': StepLR,
-    'multistep': MultiStepLR,
-    'linear': LinearLR,
-    'exponential': ExponentialLR,
-    'cosine': CosineAnnealingLR,
-    'cosine_restart': CosineAnnealingWarmRestarts,
-}
 
-def get_scheduler(optimizer: Optimizer, cfg: CfgNode) -> LRScheduler:
+class NoSchedule(scheduler.LRScheuler):
+    def get_lr(self):
+        return [group["lr"] for group in self.optimizer.param_groups]
+
+
+def get_scheduler(optimizer: Optimizer, cfg: CfgNode) -> scheduler.LRScheduler:
     """
     Function to map scheduler name to scheduler class.
     Args:
@@ -31,14 +18,32 @@ def get_scheduler(optimizer: Optimizer, cfg: CfgNode) -> LRScheduler:
         scheduler (torch.optim.lr_scheduler.LRScheduler): learning rate scheduler.
     """
 
-    formatted_name = cfg.scheduler.name.lower()
-    if formatted_name not in map:
-        raise ValueError(
-            "Parameter `scheduler.name` not recognized. Expected one of" +
-            "".join(f'\n\t- {name}' for name in map.keys()) +
-            f"\nbut got `{cfg.scheduler.name}`."
-        )
+    kwargs = dict(cfg.scheduler)
+    scheduler_name = str(kwargs.pop("name", None))
+    formatted_scheduler_name = scheduler_name.lower()
 
-    scheduler_class = map.get(formatted_name)
+    if formatted_scheduler_name == "none":
+        print(f"Received `cfg.scheduler.name = {scheduler_name}`. Defaulting to NoSchedule.")
+        scheduler_class = NoSchedule
+    elif formatted_scheduler_name == "noschedule":
+        scheduler_class = NoSchedule
+    elif formatted_scheduler_name == "constant":
+        scheduler_class = scheduler.ConstantLR
+    elif formatted_scheduler_name == "step":
+        scheduler_class = scheduler.StepLR
+    elif formatted_scheduler_name == "multistep":
+        scheduler_class = scheduler.MultiStepLR
+    elif formatted_scheduler_name == "linear":
+        scheduler_class = scheduler.LinearLR
+    elif formatted_scheduler_name == "exponential":
+        scheduler_class = scheduler.ExponentialLR
+    elif formatted_scheduler_name == "cosine":
+        scheduler_class = scheduler.CosineAnnealingLR
+    elif formatted_scheduler_name == "cosine_restart":
+        scheduler_class = scheduler.CosineAnnealingWarmRestarts
+    else:
+        raise ValueError(f"Argument `cfg.scheduler.name` not recognized (got `{scheduler_name}`).")
 
-    return scheduler_class(optimizer, **dict(cfg.scheduler))
+    scheduler_obj = scheduler_class(optimizer, **kwargs)
+
+    return scheduler_obj

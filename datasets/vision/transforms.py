@@ -1,38 +1,35 @@
-from typing import Tuple
+from typing import Any, Tuple, Dict
 
+from attrdict import AttrDict
 from yacs.config import CfgNode
-import torch.nn as nn
-from torchvision.transforms import Compose
+import torchvision.transforms as Transforms
 
 
-map = {
-    # transform name: transform class
-}
-
-def get_transform(transform_name: str, cfg: CfgNode) -> nn.Module:
+def get_transform(transform: Dict[str, str]) -> Any:
     """
     Function to map transform name to transform class.
     Args:
-        transform_name (str): name of the transform used for the experiment.
-        cfg (yacs.CfgNode): experiment configurations.
+        transform_name (Dict): name and kwargs of the transform.
     Returns:
-        transform_class (nn.Module): a transform class.
+        transform_obj (Any): a transform class.
     """
 
-    formatted_transform_name = transform_name.lower()
-    if formatted_transform_name not in map:
-        raise ValueError(
-            "Parameter `transform_name` not recognized. Expected one of" +
-            "".join(f'\n\t- {valid_transform_name},' for valid_transform_name in map.keys()) +
-            f"\nbut got `{transform_name}`."
-        )
+    kwargs = transform.copy()
+    formatted_transform_name = str(kwargs.pop("name", None)).lower()
 
-    transform_class = map.get(formatted_transform_name)
+    if formatted_transform_name == "none":
+        print(f"Received `{transform['name'] = }`. Skipping.")
+    elif formatted_transform_name == "totensor":
+        transform_class = Transforms.ToTensor
+    else:
+        raise ValueError(f"Argument `transform['name']` not recognized (got `{transform['name']}`).")
 
-    return transform_class(cfg)
+    transform_obj = transform_class(**kwargs)
+
+    return transform_obj
 
 
-def compose(cfg: CfgNode, train: bool) -> Tuple[Compose, Compose]:
+def compose(cfg: CfgNode, train: bool) -> Tuple[Transforms.Compose, Transforms.Compose]:
     """
     Function to compose transforms; different logic for train/eval.
     If `train=True`, then in addition to common transforms, eg. some processing,
@@ -41,21 +38,16 @@ def compose(cfg: CfgNode, train: bool) -> Tuple[Compose, Compose]:
         cfg (yacs.CfgNode): experiment configurations.
         train (bool): Boolean indicating whether transforming training or evaluation set.
     Returns:
-        transform_class (nn.Module): a transform class.
+        transform_class (transforms.Compose): a transform class.
     """
 
-    input_transforms = list()
-    for transform_name in cfg.dataset.common_transforms.input:
-        input_transforms.append(get_transform(transform_name))
-
-    target_transforms = list()
-    for transform_name in cfg.dataset.common_transforms.target:
-        target_transforms.append(get_transform(transform_name))
-
+    default = AttrDict({"input": list(), "train": list()})
     if train:
-        for transform_name in cfg.dataset.train_transforms.input:
-            input_transforms.append(get_transform(transform_name))
-        for transform_name in cfg.dataset.train_transforms.target:
-            target_transforms.append(get_transform(transform_name))
+        transforms = cfg.dataset.transforms.get("train", default)
+    else:
+        transforms = cfg.dataset.transforms.get("eval", default)
+    
+    input_transforms = list(map(get_transform, transforms.input))
+    target_transforms = list(map(get_transform, transforms.target))
 
-    return Compose(input_transforms), Compose(target_transforms)
+    return Transforms.Compose(input_transforms), Transforms.Compose(target_transforms)
