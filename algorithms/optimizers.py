@@ -22,7 +22,7 @@ def get_optimizer(parameters: Iterator[Parameter], cfg: CfgNode) -> optim.Optimi
     if formatted_optimizer_name == "none":
         print(f"Received `cfg.optimizer.name = {optimizer_name}`. Defaulting to SGD.")
         optimizer_class = optim.SGD
-    elif formatted_optimizer_name == "sgd":
+    elif formatted_optimizer_name in ("gd", "sgd"):
         optimizer_class = optim.SGD
     elif formatted_optimizer_name == "rmsprop":
         optimizer_class = optim.RMSprop

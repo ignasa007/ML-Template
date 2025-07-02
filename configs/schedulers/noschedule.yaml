@@ -1,3 +1,4 @@
+name: "NoSchedule"
 step:
     batches: -1
     epochs: -1

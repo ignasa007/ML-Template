@@ -7,7 +7,7 @@ loader:
 	num_workers: 2
 	pin_memory: true
 	
-train:
+training:
 	accum_grad: 1
 	stop:
 		batches: 10000
@@ -16,10 +16,10 @@ train:
 		batches: 1
 		epoches: 1
 
-eval:
+evaluation:
 	batches: -1
 	epoches: 1
 
-save:
+save_ckpt:
 	batches: -1
 	epochs: -1

@@ -14,70 +14,62 @@ def default_cfg() -> CfgNode:
         _C: A configuration object with placeholder values.
     """
 
-    _C = CfgNode(new_allowed=True)
-    _C.exp_dir = None
+    _C = CfgNode()
+    _C.exp_dir = "./results"
 
     # Dataset parameters
     _C.dataset = CfgNode()
-    _C.dataset.root = None
+    _C.dataset.root = "./datastore"
     _C.dataset.output_dim = None
-    # Dataset split sizes
-    _C.dataset.sizes = CfgNode()
-    _C.dataset.sizes.train = None
-    _C.dataset.sizes.val = None
-    _C.dataset.sizes.test = None
     # Transforms
     _C.dataset.transforms = CfgNode()
     _C.dataset.transforms.train = CfgNode()
-    _C.dataset.transforms.train.input = None
-    _C.dataset.transforms.train.target = None
+    _C.dataset.transforms.train.input = list()
+    _C.dataset.transforms.train.target = list()
     _C.dataset.transforms.eval = CfgNode()
-    _C.dataset.transforms.eval.input = None
-    _C.dataset.transforms.eval.target = None
+    _C.dataset.transforms.eval.input = list()
+    _C.dataset.transforms.eval.target = list()
     # Hardware-dependent configurations
     _C.dataset.batch_size = None
-    _C.dataset.to_cuda = None
+    _C.dataset.to_cuda = False
     # Metric tracking
     _C.dataset.objective = None
-    _C.dataset.metrics = None
+    _C.dataset.metrics = list()
     # Dataloader configurations
     _C.loader = CfgNode()
-    _C.loader.shuffle = None
-    _C.loader.num_workers = None
-    _C.loader.pin_memory = None
+    _C.loader.shuffle = False
+    _C.loader.num_workers = 1
+    _C.loader.pin_memory = False
 
     # Architecture configurations
     _C.architecture = CfgNode()
 
     # Algorithm configurations
     _C.optimizer = CfgNode()
-    _C.optimizer.name = None
+    _C.optimizer.name = "SGD"
     _C.scheduler = CfgNode()
-    _C.scheduler.name = None
-    _C.scheduler.step = CfgNode()
-    _C.scheduler.step.batches = None
-    _C.scheduler.step.epochs = None
+    _C.scheduler.name = "NoSchedule"
 
     # Training configurations
-    _C.train = CfgNode()
-    _C.train.accum_grad = None
+    _C.training = CfgNode()
+    _C.training.accum_grad = 1
     # Stopping criterion
-    _C.train.stop = CfgNode()
-    _C.train.stop.batches = None
-    _C.train.stop.epochs = None
+    _C.training.stop = CfgNode()
+    _C.training.stop.batches = None
+    _C.training.stop.epochs = None
     # Logging criterion
-    _C.train.log = CfgNode()
-    _C.train.log.batches = None
-    _C.train.log.epochs = None
+    _C.training.log = CfgNode()
+    _C.training.log.batches = None
+    _C.training.log.epochs = None
     
     # Evaluation configurations
-    _C.eval = CfgNode()
-    _C.eval.batches = None
-    _C.eval.epochs = None
+    _C.evaluation = CfgNode()
+    _C.evaluation.batches = None
+    _C.evaluation.epochs = None
     # Model saving configurations
-    _C.save = CfgNode()
-    _C.save.batches = None
-    _C.save.epochs = None
+    _C.save_ckpt = CfgNode()
+    _C.save_ckpt.batches = None
+    _C.save_ckpt.epochs = None
 
     return _C.clone()
 
@@ -94,12 +86,13 @@ class Config:
             args (Namespace): command-line arguments.
         """
 
-        self.cfg = default_cfg()
+        self.cfg = default_cfg().set_new_allowed(True)
 
         self.cfg.merge_from_file(f"{root}/config.yaml")
-        self.cfg.dataset.merge_from_file(f"{root}/datasets/{args.dataset}.yaml")
-        self.cfg.architecture.merge_from_file(f"{root}/architectures/{args.architecture}.yaml")
-
+        self.cfg.dataset.merge_from_file(f"{root}/datasets/{args.dataset.lower()}.yaml")
+        self.cfg.architecture.merge_from_file(f"{root}/architectures/{args.architecture.lower()}.yaml")
+        self.cfg.optimizer.merge_from_file(f"{root}/optimizers/{args.optimizer.lower()}.yaml")
+        self.cfg.scheduler.merge_from_file(f"{root}/schedulers/{args.scheduler.lower()}.yaml")
         if isinstance(args.opts, list):
             self.cfg.merge_from_list(args.opts)
 
