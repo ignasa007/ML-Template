@@ -1,16 +1,16 @@
 from typing import List
 
 from yacs.config import CfgNode
-from torch import device as Device
-from torch.utils.data import DataLoader
+import torch
+from torch.utils.data import DataLoader, default_collate
 
-from datasets.base import BaseDataset
+from datasets import BaseDataset
 
 
 def get_loaders(
-    *datasets: List[BaseDataset],
+    *datasets: BaseDataset,
     cfg: CfgNode,
-    device: Device
+    device: torch.device
 ) -> List[DataLoader]:
 
     """"
@@ -21,12 +21,11 @@ def get_loaders(
     - Use `cfg.loader.pin_memory` only if data is stored on CPU but target device is GPU, else set it to False
 
     Args:
-        datasets (List[data.base.BaseDataset, ...]): list of datasets, e.g. train, val, test.
+        datasets (List[datasets.BaseDataset]): list of datasets, e.g. train, val, test.
         cfg (yacs.CfgNode): experiment configurations.
         device (torch.device): target device for requested samples
-
     Returns:
-        data_loaders (List[torch.utils.data.DataLoader, ...]): list of data-loaders.
+        data_loaders (List[torch.utils.data.DataLoader]): list of data-loaders.
     """
 
     data_loaders = list()
@@ -37,14 +36,15 @@ def get_loaders(
             dataset.to(device)
         elif device.type == "cuda":
             if cfg.dataset.to_cuda:
+                # Push to GPU if VRAM would permit; user has to specify
                 dataset.to(device)
-            # Note the target device to be used in the __getitem__ method
-            else:
-                dataset.target_device = device
         else:
-            raise ValueError(f"Unrecognized `device.type = {device.type}`.")
+            raise ValueError(f"Unrecognized `device.type={device.type}`.")
+        
+        # Note the device to be used by __getitem__ and collate methods
+        dataset.target_device = device
 
-        # Set pin_memory only if data is on CPU and target device is GPU
+        # Set pin_memory only if data is on CPU but target device is GPU
         kwargs = dict(cfg.loader)
         kwargs["pin_memory"] = dataset.storage_device.type == "cpu" \
             and dataset.target_device.type == "cuda" \
@@ -53,7 +53,7 @@ def get_loaders(
         data_loaders.append(DataLoader(
             dataset,
             batch_size=cfg.dataset.batch_size,
-            collate_fn=dataset.collater,
+            collate_fn=dataset.collate,
             **kwargs
         ))
 

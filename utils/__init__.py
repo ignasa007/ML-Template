@@ -1,6 +1,6 @@
 """__init__ file for utils."""
 
-from utils.config import Config
-from utils.logger import Logger
-from utils.eval import eval_batch, eval_epoch
-from utils.train import train_batch
+from .config import get_config
+from .logger import Logger
+from .eval import eval_batch, eval_epoch
+from .train import train_batch

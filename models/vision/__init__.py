@@ -1,6 +1,2 @@
-from models.vision.simple_cnn import SimpleCNN
-
-
-map = {
-    "simplecnn": SimpleCNN
-}
+# Import all architecture classes in order to triger architecture registration via decorators
+from .simple_cnn import SimpleCNN

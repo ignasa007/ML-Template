@@ -1,8 +1,1 @@
-from yacs.config import CfgNode
-
-from models.base import BaseArchitecture
-
-
-map = {
-    # architecture name: architecture class
-}
+# Import all architecture classes in order to triger architecture registration via decorators

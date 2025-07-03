@@ -1,25 +1,23 @@
 # Experiment configurations
 
-exp_dir: null
-
 loader:
-	shuffle: true
-	num_workers: 2
-	pin_memory: true
-	
+    shuffle: true
+    num_workers: 0
+    pin_memory: false
+    
 training:
-	accum_grad: 1
-	stop:
-		batches: 10000
-		epochs: null
-	log:
-		batches: 1
-		epoches: 1
+    accum_grad: 1
+    stop:
+        batches: 10000
+        epochs: null
+    log:
+        batches: 1
+        epochs: 1
 
 evaluation:
-	batches: -1
-	epoches: 1
+    batches: 1000
+    epochs: 1
 
 save_ckpt:
-	batches: -1
-	epochs: -1
+    batches: 1000
+    epochs: 2

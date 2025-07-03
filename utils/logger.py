@@ -18,7 +18,7 @@ class Logger:
         return datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     @staticmethod
-    def process_kwargs(**kwargs) -> Dict[str, Any]:
+    def process_kwargs(kwargs: Dict) -> Dict[str, Any]:
         # Expecting kwargs["kwargs"] to be a dictionary in itself
         #   => update kwargs with kwargs["kwargs"]
         if "kwargs" in kwargs:
@@ -94,6 +94,7 @@ class Logger:
         self.log(formatted_metrics, with_time, print_text)
 
     def save_objects(self, **kwargs) -> None:
+        
         """
         Save Python objects as (binary) pickle files.
         Args:
@@ -114,20 +115,14 @@ class Logger:
 
     def save_arrays(self, **kwargs) -> None:
         """Save NumPy arrays."""
-
         kwargs = Logger.process_kwargs(kwargs)
         for fn, arr in kwargs.items():
-            assert isinstance(arr, np.ndarray), \
-                f"Expected NumPy arrays, instead received type({fn}) = {type(arr)}."
             fn = Logger.fix_ext(fn, default_ext=".npy", force_ext=True)
             np.save(file=f"{self.OBJECTS_DIR}/{fn}", arr=arr, allow_pickle=True)
 
     def save_tensors(self, **kwargs) -> None:
-        """Save PyTorch tensors."""
-
+        """Save PyTorch tensors. Your responsibility to detach from the computational graph."""
         kwargs = Logger.process_kwargs(kwargs)
         for fn, tensor in kwargs.items():
-            assert isinstance(tensor, Tensor), \
-                f"Expected PyTorch tensors, instead received type({fn}) = {type(tensor)}."
-            fn = Logger.fix_ext(fn, default_ext=".pt")
-            torch.save(tensor, f=f"{self.OBJECTS_DIR}/{fn}", force_ext=True)
+            fn = Logger.fix_ext(fn, default_ext=".pt", force_ext=True)
+            torch.save(tensor, f=f"{self.OBJECTS_DIR}/{fn}")

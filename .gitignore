@@ -2,3 +2,4 @@
 **/*.pth
 **/tmp/
 datastore/
+results/

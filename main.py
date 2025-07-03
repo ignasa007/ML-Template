@@ -1,5 +1,4 @@
 from typing import Optional, Tuple, List, Dict
-from collections.abc import Iterable
 import argparse
 from tqdm import tqdm
 
@@ -8,9 +7,9 @@ from torch.utils.data import DataLoader
 
 from datasets import get_dataset, get_loaders
 from metrics import ResultsTracker
-from models import BaseArchitecture, get_model
+from models import get_model
 from algorithms import get_optimizer, get_scheduler
-from utils import Config, Logger, eval_epoch
+from utils import get_config, Logger, eval_epoch
 
 
 parser = argparse.ArgumentParser()
@@ -22,21 +21,21 @@ parser.add_argument("--device_index", type=int, help="GPU device index")
 parser.add_argument("opts", default=None, nargs=argparse.REMAINDER, help="Modify config options")
 args = parser.parse_args()
 
-cfg = Config(root="configs", args=args)
+cfg = get_config(root="configs", args=args)
 logger = Logger(args, cfg)
 device = torch.device(f"cuda:{args.device_index}" if torch.cuda.is_available() and args.device_index is not None else "cpu")
 
 logger.log("Loading and pre-processing datasets...", print_text=True)
-training_dataset, evaluation_datasets = get_dataset(args.dataset, cfg)
+input_dim, training_dataset, evaluation_datasets = get_dataset(args.dataset, cfg)
 # Not sure what the point is of this if we can use lazy initialization of modules
-cfg.dataset.input_dim = training_dataset.input_dim
-logger.log("Finished pre-processing datasets.\n", print_text=True)
+cfg.dataset.input_dim = tuple(input_dim)
+logger.log("Finished pre-processing datasets.", print_text=True)
 
 logger.log("Preparing data-loaders...", print_text=True)
-names, evaluation_datasets = zip(evaluation_datasets)
-training_loader, evaluation_loaders = get_loaders([training_dataset]+list(evaluation_datasets), cfg, device)
+names, evaluation_datasets = zip(*evaluation_datasets)
+training_loader, *evaluation_loaders = get_loaders(training_dataset, *evaluation_datasets, cfg=cfg, device=device)
 evaluation_loaders = list(zip(names, evaluation_loaders))
-logger.log("Finished preparing data-loaders.\n", print_text=True)
+logger.log("Finished preparing data-loaders.", print_text=True)
 
 logger.log("Preparing model...", print_text=True)
 model = get_model(args.architecture, cfg).to(device)
@@ -56,14 +55,14 @@ def log_metrics(
 ) -> None:
 
     if isinstance(header, str):
-        logger.log(header)
+        logger.log(header, with_time=False)
 
     for set_name, set_metrics in metrics:
         logger.log_metrics(set_metrics, prefix=f"{set_name} set: ")
 
 def evaluate_model(
     evaluation_loaders: Tuple[DataLoader],
-    model: BaseArchitecture,
+    model: torch.nn.Module,
     evaluation_results_tracker: ResultsTracker,
     logger: Logger,
     header: Optional[str] = None,
@@ -92,7 +91,6 @@ def evaluate_model(
         metrics.append((set_name, set_metrics))
 
     log_metrics(logger, metrics, header=header)
-
     return metrics
 
 def save_checkpoint(
@@ -134,7 +132,7 @@ while (
         model.train()
         output = model(input)
         # In case more than just the logits/regressands are outputted, e.g. activation maps
-        if isinstance(output, Iterable):
+        if isinstance(output, tuple):
             output = output[0]
         metrics = training_results_tracker.forward(output, target)
 
@@ -172,7 +170,7 @@ while (
             # Evaluate after every `cfg.evaluation.batches` batches trained
             cfg.evaluation.batches > 0 and n_batches % cfg.evaluation.batches == 0
         ):
-            evaluation_metrics = evaluate_model(logger, model, evaluation_loaders, batch_header)
+            evaluation_metrics = evaluate_model(evaluation_loaders, model, evaluation_results_tracker, logger, batch_header)
             batch_header, evaluated_this_batch = None, True
 
         # SAVE MODEL CHECKPOINT
@@ -218,7 +216,7 @@ while (
         if evaluated_this_batch:
             log_metrics(logger, evaluation_metrics, epoch_header)
         else:
-            _ = evaluate_model(logger, model, evaluation_loaders, epoch_header)
+            _ = evaluate_model(evaluation_loaders, model, evaluation_results_tracker, logger, epoch_header)
         epoch_header = None
 
     # SAVE MODEL CHECKPOINT

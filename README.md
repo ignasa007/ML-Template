@@ -58,6 +58,8 @@ Notes:
 - Make sure to omit `--device_index` if you do not wish to use a GPU.
 - The project supports up to 1 GPU per run, since I don't know how to distribute computing over multiple GPUs :').
 - We don't support `ReduceLROnPlateau` scheduler because its API doesn't tie well with the rest of the project's organization.
+- Windows is lame &ndash; keep `loader.num_workers 0` for reliable execution.
+- Make sure to use spaces, NOT tabs (as much as it may hurt you to do so), since YAML parsers require spaces to mark indentation.
 
 ## TO-DO
 

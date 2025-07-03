@@ -1,15 +1,14 @@
 from typing import Any, Tuple, Dict
 
-from attrdict import AttrDict
 from yacs.config import CfgNode
-import torchvision.transforms as Transforms
+from torchvision import transforms
 
 
-def get_transform(transform: Dict[str, str]) -> Any:
+def get_transform(transform: Dict[str, Any]) -> Any:
     """
-    Function to map transform name to transform class.
+    Function to map transform name to transform obj.
     Args:
-        transform_name (Dict): name and kwargs of the transform.
+        transform_name (Dict[str, Any]): name and kwargs of the transform.
     Returns:
         transform_obj (Any): a transform class.
     """
@@ -17,10 +16,10 @@ def get_transform(transform: Dict[str, str]) -> Any:
     kwargs = transform.copy()
     formatted_transform_name = str(kwargs.pop("name", None)).lower()
 
-    if formatted_transform_name == "none":
+    if formatted_transform_name in ("none", "null"):
         print(f"Received `{transform['name'] = }`. Skipping.")
     elif formatted_transform_name == "totensor":
-        transform_class = Transforms.ToTensor
+        transform_class = transforms.ToTensor
     else:
         raise ValueError(f"Argument `transform['name']` not recognized (got `{transform['name']}`).")
 
@@ -29,25 +28,22 @@ def get_transform(transform: Dict[str, str]) -> Any:
     return transform_obj
 
 
-def compose(cfg: CfgNode, train: bool) -> Tuple[Transforms.Compose, Transforms.Compose]:
+def compose(cfg: CfgNode, train: bool) -> Tuple[transforms.Compose, transforms.Compose]:
     """
-    Function to compose transforms; different logic for train/eval.
-    If `train=True`, then in addition to common transforms, eg. some processing,
-        also apply training-specific transforms, eg. random crop, label smoothing.
     Args:
         cfg (yacs.CfgNode): experiment configurations.
         train (bool): Boolean indicating whether transforming training or evaluation set.
     Returns:
-        transform_class (transforms.Compose): a transform class.
+        input_transforms (transforms.Compose): sequence of input transforms composed.
+        target_transforms (transforms.Compose): sequence of target transforms composed.
     """
 
-    default = AttrDict({"input": list(), "train": list()})
     if train:
-        transforms = cfg.dataset.transforms.get("train", default)
+        split_transforms = cfg.dataset.transforms.train
     else:
-        transforms = cfg.dataset.transforms.get("eval", default)
+        split_transforms = cfg.dataset.transforms.eval
     
-    input_transforms = list(map(get_transform, transforms.input))
-    target_transforms = list(map(get_transform, transforms.target))
+    input_transforms = transforms.Compose(list(map(get_transform, split_transforms.input)))
+    target_transforms = transforms.Compose(list(map(get_transform, split_transforms.target)))
 
-    return Transforms.Compose(input_transforms), Transforms.Compose(target_transforms)
+    return input_transforms, target_transforms

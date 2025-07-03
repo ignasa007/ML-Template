@@ -1,4 +1,4 @@
-from torch import Tensor, device as Device
+import torch
 
 
 class BaseMetric:
@@ -9,7 +9,7 @@ class BaseMetric:
         """Initialize an object to save the results in."""
         self.reset()
 
-    def to(self, device: Device):
+    def to(self, device: torch.device):
         """Compute the results on device."""
         raise NotImplementedError
 
@@ -17,10 +17,10 @@ class BaseMetric:
         """Reset metric state variables to their default value."""
         raise NotImplementedError
 
-    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+    def forward(self, preds: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """Update the metric with batch predictions and target."""
         raise NotImplementedError
 
-    def compute(self) -> Tensor:
+    def compute(self) -> torch.Tensor:
         """Aggregate metric based on inputs passed in to `update_metric` previously."""
         raise NotImplementedError

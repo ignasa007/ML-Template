@@ -1,75 +1,14 @@
-from typing import Any, List, Optional
-
 from yacs.config import CfgNode
 import torch.nn as nn
 
-from models.utils import get_activation
-from models.vision.utils import get_normalization_layer, get_pooling_layer
+from ..registry import register_architecture
+from ..common import get_activation, interpret_args, make_kwargs
+from .pooling import  get_pooling_layer
+from .normalization import get_normalization_layer
 
 
-# Copied from strtobool in distutils/util.py (deprecated Python 3.12 onwards)
-def strtobool(val):
-    val = val.lower()
-    if val in ("y", "yes", "t", "true", "on", "1"):
-        return True
-    elif val in ("n", "no", "f", "false", "off", "0"):
-        return False
-    else:
-        raise ValueError("Invalid truth value %r" % (val,))
-
-
-def interpret_args(args: str, to: type, default: Any, num_layers: Optional[int] = None) -> List:
-    """
-    Parses args in format `type type*int type*int...`
-    e.g. say `to` is `int`, then `args = "64 32*3 16*2"` is split as
-        `out = [64, 32, 32, 32, 16, 16]`.
-    e.g. say `to` is `bool`, then `args = "True*3 f*2 0"` is split as
-        `out = [True, True, True, False, False False]`; see function `strtobool`.
-
-    If args is split into one value only, then repeat it for `num_layers` number of times.
-    e.g. `args=16, to=int, num_layers=3` is split as 
-        `out = [16, 16, 16]`.
-    """
-
-    if to == bool:
-        to = strtobool
-    def cast(arg: str):
-        if arg.lower() in ('none', 'null'):
-            return None
-        else:
-            return to(arg)
-
-    args = str(args)
-    out = list()
-    for arg in args.split():
-        if not arg:
-            continue
-        elif "*" in arg:
-            size, mult = arg.split("*")
-            out.extend([cast(size)]*int(mult))
-        else:
-            out.append(cast(arg))
-    
-    if isinstance(num_layers, int) and num_layers < len(out):
-        raise RuntimeError(f"Parsed more args than number of layers: {args = }, {num_layers=}, {out = }.")
-    elif isinstance(num_layers, int) and num_layers > len(out):
-        if len(out) == 1:
-            out = out * num_layers
-        else:
-            raise RuntimeError(f"Cannot handle `1 < len(out) < num_layers`: {args = }, {num_layers=}, {out = }.")
-
-    return out
-
-
-def make_kwargs(**kwargs):
-    for k, v in kwargs.items():
-        if v is None:
-            del kwargs[k]
-    return kwargs
-
-
+@register_architecture("simplecnn")
 class SimpleCNN(nn.Module):
-    # TODO: Add dropout
 
     def __init__(self, cfg: CfgNode):
 
@@ -131,20 +70,15 @@ class SimpleCNN(nn.Module):
         self.fcn_layers = nn.ModuleList()
         # Input layer; infer input size upon first forward pass
         kwargs = make_kwargs(bias=biases.pop(0))
-        self.fcn_layers.append(nn.LazyLinear(out_features=num_features[0], bias=biases.pop(0)))
+        self.fcn_layers.append(nn.LazyLinear(out_features=num_features[0], **kwargs))
         # Hidden layers
         for args in zip(num_features[:-1], num_features[1:], biases):
             in_features, out_features, bias = args
             kwargs = make_kwargs(bias=bias)
             self.fcn_layers.append(nn.Linear(in_features, out_features, **kwargs))
         # Output layer
-        self.fcn_layers.append([
-            nn.Linear(
-                in_features=num_features[-1],
-                out_features=cfg.dataset.output_dim,
-                bias=biases.pop(0)
-            )
-        ])
+        kwargs = make_kwargs(bias=biases[-1])
+        self.fcn_layers.append(nn.Linear(num_features[-1], cfg.dataset.output_dim, **kwargs))
 
         # ACTIVATION FUNCTIONS
         activations = interpret_args(cfg.architecture.fcn.activations, to=str, default=None, num_layers=num_fcn_layers)

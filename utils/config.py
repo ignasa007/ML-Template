@@ -47,8 +47,10 @@ def default_cfg() -> CfgNode:
     # Algorithm configurations
     _C.optimizer = CfgNode()
     _C.optimizer.name = "SGD"
+    _C.optimizer.kwargs = CfgNode()
     _C.scheduler = CfgNode()
     _C.scheduler.name = "NoSchedule"
+    _C.scheduler.kwargs = CfgNode()
 
     # Training configurations
     _C.training = CfgNode()
@@ -74,28 +76,23 @@ def default_cfg() -> CfgNode:
     return _C.clone()
 
 
-class Config:
+def get_config(root: str, args: Namespace) -> CfgNode:
 
-    def __init__(self, root: str, args: Namespace):
+    """
+    Args:
+        root (str): file path for the default configurations.
+        args (Namespace): command-line arguments.
+    """
 
-        """
-        Initialization of the configuration object used by the main file.
+    cfg = default_cfg()
+    cfg.set_new_allowed(True)
 
-        Args:
-            root (str): file path for the default configurations.
-            args (Namespace): command-line arguments.
-        """
+    cfg.merge_from_file(f"{root}/config.yaml")
+    cfg.dataset.merge_from_file(f"{root}/datasets/{args.dataset.lower()}.yaml")
+    cfg.architecture.merge_from_file(f"{root}/architectures/{args.architecture.lower()}.yaml")
+    cfg.optimizer.merge_from_file(f"{root}/optimizers/{args.optimizer.lower()}.yaml")
+    cfg.scheduler.merge_from_file(f"{root}/schedulers/{args.scheduler.lower()}.yaml")
+    if isinstance(args.opts, list):
+        cfg.merge_from_list(args.opts)
 
-        self.cfg = default_cfg().set_new_allowed(True)
-
-        self.cfg.merge_from_file(f"{root}/config.yaml")
-        self.cfg.dataset.merge_from_file(f"{root}/datasets/{args.dataset.lower()}.yaml")
-        self.cfg.architecture.merge_from_file(f"{root}/architectures/{args.architecture.lower()}.yaml")
-        self.cfg.optimizer.merge_from_file(f"{root}/optimizers/{args.optimizer.lower()}.yaml")
-        self.cfg.scheduler.merge_from_file(f"{root}/schedulers/{args.scheduler.lower()}.yaml")
-        if isinstance(args.opts, list):
-            self.cfg.merge_from_list(args.opts)
-
-    def __getattr__(self, name: str) -> Any:
-        """Method for returning configurations using dot operator."""
-        return self.cfg.__getattr__(name)
+    return cfg

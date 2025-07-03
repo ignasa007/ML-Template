@@ -3,43 +3,9 @@ from typing import Tuple, List
 from yacs.config import CfgNode
 from torch import Tensor, device as Device
 
-from metrics.base import BaseMetric
-from metrics import classification, regression
-
-
-def get_metric(metric_name: str, cfg: CfgNode) -> BaseMetric:
-    """
-    Function to map metric name to metric class.
-    Args:
-        metric_name (str): name of the metric function.
-        cfg (yacs.CfgNode): experiment configurations.
-    Returns:
-        metric_class (BaseMetric): a piecewise metric function.
-    """
-
-    formatted_metric_name = metric_name.lower()
-
-    if formatted_metric_name == "celoss":
-        metric_class = classification.CELoss
-    elif formatted_metric_name == "accuracy":
-        metric_class = classification.Accuracy
-    elif formatted_metric_name == "f1score":
-        metric_class = classification.F1Score
-    elif formatted_metric_name == "auroc":
-        metric_class = classification.AUROC
-    elif formatted_metric_name == "mse":
-        metric_class = regression.MeanSquaredError
-    elif formatted_metric_name == "mae":
-        metric_class = regression.MeanAbsoluteError
-    elif formatted_metric_name == "mape":
-        metric_class = regression.MeanAbsolutePercentageError
-    else:
-        raise ValueError(f"Argument `metric_name` not recognized (got `{metric_name}`).")
-
-    # TODO: Seems like an overkill to pass the entire cfg to `metric_class`; just need `num_classes` I think
-    metric_obj = metric_class(cfg)
-
-    return metric_obj
+# Import all metric classes in order to triger metric registration via decorators
+from . import classification, regression
+from .registry import get_metric
 
 
 class ResultsTracker:

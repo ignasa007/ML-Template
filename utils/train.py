@@ -1,19 +1,18 @@
 from typing import Tuple, List
 
-from torch import Tensor
+import torch
 from torch.optim import Optimizer
 
-from models import BaseArchitecture
 from metrics import ResultsTracker
 
 
 def train_batch(
     input,
-    target: Tensor,
-    model: BaseArchitecture,
+    target: torch.Tensor,
+    model: torch.nn.Module,
     optimizer: Optimizer,
     results: ResultsTracker
-) -> List[Tuple[str, Tensor]]:
+) -> List[Tuple[str, torch.Tensor]]:
 
     """
     Evaluate the model on a batch from the train set.
@@ -22,17 +21,16 @@ def train_batch(
     Args:
         input: model input.
         target (torch.Tensor): groundtruth label.
-        model (model.BaseModel): model.
-        objective (str): key for the metrics dictionary returned by update step of `results`.
-        optimizer (torch.optim.Optimizer): optimizer.
-        results (Dict[str, torch.Tensor]): metrics over the batch.
+        model (model.BaseModel): model being trained.
+        optimizer (torch.optim.Optimizer): optimizer used for updating model parameters.
+        results (List[Tuple[str, torch.Tensor]]): metrics over the batch.
     """
 
     out = model(input)
     metrics = results.forward(out, target)
 
-    objective_name, objective_value = metrics[0]
-    objective_value.backward()
+    _, objective = metrics[0]
+    objective.backward()
     optimizer.step()
 
     return metrics

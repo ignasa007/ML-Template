@@ -12,7 +12,7 @@ def get_activation(activation_name: str) -> nn.Module:
 
     formatted_activation_name = str(activation_name).lower()
 
-    if formatted_activation_name == "none":
+    if formatted_activation_name in ("none", "null"):
         print(f"Received `{activation_name = }`. Defaulting to Identity.")
         activation_class = nn.Identity 
     elif formatted_activation_name == "identity":
