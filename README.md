@@ -59,9 +59,11 @@ Notes:
 - The project supports up to 1 GPU per run, since I don't know how to distribute computing over multiple GPUs :').
 - We don't support `ReduceLROnPlateau` scheduler because its API doesn't tie well with the rest of the project's organization.
 
-## TODO
+## TO-DO
 
+Loosely, in order of priority:
 - [ ] Add support for dropout
 - [ ] Add support for residual connections
 - [ ] Implement `LazyLayerNorm`
+- [ ] Add support for initialization schemes. Note that lazy modules are initialized at first forward pass, not with the rest of the model (using `.reset_parameters`) &ndash; need to handle that.
 - [ ] Figure out how to handle multidimensional regression metrics
