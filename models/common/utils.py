@@ -12,7 +12,8 @@ def strtobool(val):
         raise ValueError("Invalid truth value %r" % (val,))
 
 
-def interpret_args(args: str, to: type, default: Any, num_layers: Optional[int] = None) -> List:
+def interpret_args(args: str, to: type, num_layers: Optional[int] = None) -> List:
+    
     """
     Parses args in format `type type*int type*int...`
     e.g. say `to` is `int`, then `args = "64 32*3 16*2"` is split as
@@ -20,44 +21,49 @@ def interpret_args(args: str, to: type, default: Any, num_layers: Optional[int] 
     e.g. say `to` is `bool`, then `args = "True*3 f*2 0"` is split as
         `out = [True, True, True, False, False False]`; see function `strtobool`.
 
-    If args is split into one value only, then repeat it for `num_layers` number of times.
-    e.g. `args=16, to=int, num_layers=3` is split as 
-        `out = [16, 16, 16]`.
+    `None`, strings `"None"` and `"Null"`, and their lower-case versions are parsed as None.
+    Combinations of the characters `"."`, `"-"`, and `"_"` are parsed as Ellipsis;
+        to be left out when making kwargs (see `make_kwargs` below).
+    If args is split into exactly one value, copy it `num_layers` times over.
     """
 
     if to == bool:
         to = strtobool
+
     def cast(arg: str):
         if arg.lower() in ('none', 'null'):
             return None
-        else:
-            return to(arg)
+        elif set(arg).issubset(('.', '-', '_')):
+            return ...
+        return to(arg)
 
     args = str(args)
     out = list()
     for arg in args.split():
-        if not arg:
+        if arg == "":
             continue
         elif "*" in arg:
-            size, mult = arg.split("*")
-            out.extend([cast(size)]*int(mult))
+            value, multiplicity = arg.split("*")
+            out.extend([cast(value)]*int(multiplicity))
         else:
             out.append(cast(arg))
     
-    if isinstance(num_layers, int) and num_layers < len(out):
-        raise RuntimeError(f"Parsed more args than number of layers: {args = }, {num_layers=}, {out = }.")
-    elif isinstance(num_layers, int) and num_layers > len(out):
+    if isinstance(num_layers, int):
         if len(out) == 1:
             out = out * num_layers
-        else:
-            raise RuntimeError(f"Cannot handle `1 < len(out) < num_layers`: {args = }, {num_layers=}, {out = }.")
+        elif len(out) != num_layers:
+            raise RuntimeError(
+                "Number of args parsed is not equal to the number of layers:"
+                f" args = {args}, to = {to.__name__}, num_layers = {num_layers} -> out = {out}."
+            )
 
     return out
 
 
 def make_kwargs(**kwargs):
+    """Ellipsis are not included in kwargs."""
     out = kwargs.copy()
     for k, v in kwargs.items():
-        if v is None:
+        if v == Ellipsis:
             del out[k]
     return out

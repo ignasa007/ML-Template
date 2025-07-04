@@ -16,13 +16,13 @@ class SimpleCNN(nn.Module):
 
         ### CONVOLUTIONAL BACKBONE
         
-        num_channels = interpret_args(cfg.architecture.conv.num_channels, to=int, default=None, num_layers=None)
+        num_channels = interpret_args(cfg.architecture.conv.num_channels, to=int, num_layers=None)
         num_conv_layers = len(num_channels)
         # Assuming square conv kernels
-        kernel_sizes = interpret_args(cfg.architecture.conv.kernel_sizes, to=int, default=2, num_layers=num_conv_layers)
-        strides = interpret_args(cfg.architecture.conv.strides, to=int, default=1, num_layers=num_conv_layers)
-        paddings = interpret_args(cfg.architecture.conv.paddings, to=int, default=0, num_layers=num_conv_layers)
-        biases = interpret_args(cfg.architecture.conv.biases, to=bool, default=True, num_layers=num_conv_layers)
+        kernel_sizes = interpret_args(cfg.architecture.conv.kernel_sizes, to=int, num_layers=num_conv_layers)
+        strides = interpret_args(cfg.architecture.conv.strides, to=int, num_layers=num_conv_layers)
+        paddings = interpret_args(cfg.architecture.conv.paddings, to=int, num_layers=num_conv_layers)
+        biases = interpret_args(cfg.architecture.conv.biases, to=bool, num_layers=num_conv_layers)
         
         # CONV LAYERS
         self.conv_layers = nn.ModuleList()
@@ -36,11 +36,11 @@ class SimpleCNN(nn.Module):
             self.conv_layers.append(nn.Conv2d(in_channels, out_channels, **kwargs))
 
         # POOLING LAYERS
-        pooler_names = interpret_args(cfg.architecture.conv.pooler.names, to=str, default=None, num_layers=num_conv_layers)
+        pooler_names = interpret_args(cfg.architecture.conv.poolers.names, to=str, num_layers=num_conv_layers)
         # Assuming square pooling kernels
-        kernel_sizes = interpret_args(cfg.architecture.conv.pooler.sizes, to=int, default=2, num_layers=num_conv_layers)
-        strides = interpret_args(cfg.architecture.conv.pooler.strides, to=int, default=None, num_layers=num_conv_layers)
-        paddings = interpret_args(cfg.architecture.conv.pooler.paddings, to=int, default=1, num_layers=num_conv_layers)
+        kernel_sizes = interpret_args(cfg.architecture.conv.poolers.sizes, to=int, num_layers=num_conv_layers)
+        strides = interpret_args(cfg.architecture.conv.poolers.strides, to=int, num_layers=num_conv_layers)
+        paddings = interpret_args(cfg.architecture.conv.poolers.paddings, to=int, num_layers=num_conv_layers)
         self.conv_pooling_layers = nn.ModuleList()
         for args in zip(pooler_names, kernel_sizes, strides, paddings):
             pooler_name, kernel_size, stride, padding = args
@@ -48,13 +48,13 @@ class SimpleCNN(nn.Module):
             self.conv_pooling_layers.append(get_pooling_layer(pooler_name, **kwargs))
 
         # NORMALIZATION LAYERS
-        normalization_layers = interpret_args(cfg.architecture.conv.normalization_layers, to=str, default=None, num_layers=num_conv_layers)
+        normalization_layers = interpret_args(cfg.architecture.conv.normalization_layers, to=str, num_layers=num_conv_layers)
         self.conv_normalization_layers = nn.ModuleList()
         for name in normalization_layers:
             self.conv_normalization_layers.append(get_normalization_layer(name))
 
         # ACTIVATION FUNCTIONS
-        activations = interpret_args(cfg.architecture.conv.activations, to=str, default=None, num_layers=num_conv_layers)
+        activations = interpret_args(cfg.architecture.conv.activations, to=str, num_layers=num_conv_layers)
         self.conv_activations = nn.ModuleList()
         for name in activations:
             self.conv_activations.append(get_activation(name))
@@ -62,9 +62,9 @@ class SimpleCNN(nn.Module):
         ### FULLY CONNECTED HEAD
         
         self.flatten = nn.Flatten()
-        num_features = interpret_args(cfg.architecture.fcn.hidden_dims, to=int, default=None, num_layers=None)
+        num_features = interpret_args(cfg.architecture.fcn.hidden_dims, to=int, num_layers=None)
         num_fcn_layers = len(num_features)
-        biases = interpret_args(cfg.architecture.fcn.biases, to=bool, default=True, num_layers=num_fcn_layers+1)
+        biases = interpret_args(cfg.architecture.fcn.biases, to=bool, num_layers=num_fcn_layers+1)
 
         # FCN LAYERS
         self.fcn_layers = nn.ModuleList()
@@ -81,7 +81,7 @@ class SimpleCNN(nn.Module):
         self.fcn_layers.append(nn.Linear(num_features[-1], cfg.dataset.output_dim, **kwargs))
 
         # ACTIVATION FUNCTIONS
-        activations = interpret_args(cfg.architecture.fcn.activations, to=str, default=None, num_layers=num_fcn_layers)
+        activations = interpret_args(cfg.architecture.fcn.activations, to=str, num_layers=num_fcn_layers)
         self.fcn_activations = nn.ModuleList()
         for name in activations:
             self.fcn_activations.append(get_activation(name))

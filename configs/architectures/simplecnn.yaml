@@ -1,18 +1,18 @@
 conv:
-    num_channels: "32*2"
-    kernel_sizes: 3
-    strides: 1
-    paddings: 1
-    biases: true
-    pooler:
-        names: "MaxPool2d AvgPool2d"
-        sizes: 2
-        strides: null
-        paddings: 0
+    num_channels: "32*3"
+    kernel_sizes: "3"
+    strides: "1"
+    paddings: "1"
+    biases: "True"
+    poolers:
+        names: "MaxPool2d AvgPool2d None"
+        sizes: "2"
+        strides: "None 1 ..."
+        paddings: "0"
     normalization_layers: "BatchNorm2d"
     activations: "ReLU"
 
 fcn:
     hidden_dims: "64 10"
-    biases: true
+    biases: "true"
     activations: "ReLU"
