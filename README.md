@@ -64,10 +64,9 @@ python -m main \
 - When reading configurations, combinations of `.`, `-` and/or `_`, such as `...` or just `-`, can be used to indicate `kwargs` which are to be skipped. E.g. `strides: "None 1 ..."` implies that the first and second layers' `kwargs` are `strides=None` and `strides=1`, respectively, while for the third layer, `stride` is not passed (default value is used).
 - Make sure to use spaces, NOT tabs (as much as it may hurt you to do so), since YAML parsers require spaces to mark indentation.
 
-**Notes:**
+## Limitations
 - The project supports up to 1 GPU per run, since I don't know how to distribute computing over multiple GPUs :').
 - We don't support `ReduceLROnPlateau` scheduler because its API doesn't tie well with the rest of the project's organization.
-- Windows is lame and sometimes fails when `loader.num_workers > 0`; use `loader.num_workers = 0` for reliable execution.
 
 ## TO-DO
 
