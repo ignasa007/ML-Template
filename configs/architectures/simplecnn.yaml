@@ -1,0 +1,24 @@
+# When reading configurations, combinations of `.`, `-` and/or `_`, e.g. `...` or just `-`, 
+#   can be used to indicate `kwargs` which are to be skipped.
+#   e.g. `strides: "None 1 ..."` implies that 
+#       - the 1st and 2nd layers' `kwargs` are `None` and `1`, respectively, 
+#       - while for the 3rd layer, `stride` is not passed, i.e. default value is used.
+
+conv:
+    num_channels: "32*3"
+    kernel_sizes: "3"
+    strides: "1"
+    paddings: "1"
+    biases: "True"
+    poolers:
+        names: "MaxPool2d AvgPool2d None"
+        sizes: "2"
+        strides: "None 1 ..."
+        paddings: "0"
+    normalization_layers: "BatchNorm2d"
+    activations: "ReLU"
+
+fcn:
+    hidden_dims: "64 10"
+    biases: "true"
+    activations: "ReLU"

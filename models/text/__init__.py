@@ -1,0 +1,1 @@
+# Import all architecture classes in order to triger architecture registration via decorators

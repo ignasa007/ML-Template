@@ -1,0 +1,23 @@
+# Experiment configurations
+
+loader:
+    shuffle: true
+    num_workers: 2
+    pin_memory: false
+    
+training:
+    accum_grad: 1
+    stop:
+        batches: 10000
+        epochs: null
+    log:
+        batches: 1
+        epochs: 1
+
+evaluation:
+    batches: 1000
+    epochs: 1
+
+save_ckpt:
+    batches: 1000
+    epochs: 2

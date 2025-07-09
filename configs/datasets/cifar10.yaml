@@ -1,0 +1,24 @@
+root: "./datastore/cifar10/"
+output_dim: 10
+
+sizes:
+    train: 0.8
+    val: 0.2
+    test: 1.0
+
+transforms:
+    train:
+        input:
+            - name: "ToTensor"
+    eval:
+        input: 
+            - name: "ToTensor"
+
+batch_size: 64
+to_cuda: false
+
+objective: "CELoss"
+metrics:
+    - "Accuracy"
+    - "F1Score"
+    - "AUROC"
