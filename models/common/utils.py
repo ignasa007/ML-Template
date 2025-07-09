@@ -31,10 +31,10 @@ def interpret_args(args: str, to: type, num_layers: Optional[int] = None) -> Lis
         to = strtobool
 
     def cast(arg: str):
-        if arg.lower() in ('none', 'null'):
+        if arg.lower() in ("none", "null"):
             return None
-        elif set(arg).issubset(('.', '-', '_')):
-            return ...
+        elif set(arg).issubset((".", "-", "_")):
+            return Ellipsis
         return to(arg)
 
     args = str(args)

@@ -25,7 +25,7 @@ def get_normalization_layer(normalization_layer_name: str, **kwargs: Dict) -> nn
 
     formatted_normalization_layer_name = str(normalization_layer_name).lower()
 
-    if formatted_normalization_layer_name in ("none", "null"):
+    if formatted_normalization_layer_name in ("none", "null", "ellipsis"):
         normalization_layer_class = NoOpModule
     elif formatted_normalization_layer_name == "batchnorm1d":
         normalization_layer_class = nn.LazyBatchNorm1d

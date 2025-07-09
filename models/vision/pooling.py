@@ -17,7 +17,7 @@ def get_pooling_layer(pooler_name: str, **kwargs: Dict) -> nn.Module:
 
     formatted_pooler_name = str(pooler_name).lower()
 
-    if formatted_pooler_name in ("none", "null"):
+    if formatted_pooler_name in ("none", "null", "ellipsis"):
         pooler_class = NoOpModule
     elif formatted_pooler_name == "maxpool1d":
         pooler_class = nn.MaxPool1d

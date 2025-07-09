@@ -16,7 +16,7 @@ def get_transform(transform: Dict[str, Any]) -> Any:
     kwargs = transform.copy()
     formatted_transform_name = str(kwargs.pop("name", None)).lower()
 
-    if formatted_transform_name in ("none", "null"):
+    if formatted_transform_name in ("none", "null", "ellipsis"):
         print(f"Received `{transform['name'] = }`. Skipping.")
     elif formatted_transform_name == "totensor":
         transform_class = transforms.ToTensor
