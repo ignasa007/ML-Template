@@ -122,7 +122,12 @@ def main(args):
         epoch_header = f"Epoch {n_epochs}"
         training_results_tracker.reset()
 
-        for input, target in tqdm(training_loader):
+        for inputs, targets in tqdm(training_loader):
+
+            # Need to transfer to GPU here because I don't know multiprocessing :')
+            # https://discuss.pytorch.org/t/dataset-location-runtimeerror-caught-runtimeerror-in-dataloader-worker-process-0/156842/4
+            inputs = inputs.to(device)
+            targets = targets.to(device)
 
             # Book-keeping
             n_batches += 1
@@ -131,11 +136,11 @@ def main(args):
 
             # FORWARD PROPAGATION
             model.train()
-            output = model(input)
+            outputs = model(inputs)
             # In case more than just the logits/regressands are outputted, e.g. activation maps
-            if isinstance(output, tuple):
-                output = output[0]
-            metrics = training_results_tracker.forward(output, target)
+            if isinstance(outputs, tuple):
+                outputs = outputs[0]
+            metrics = training_results_tracker.forward(outputs, targets)
 
             # BACKWARD PROPAGATION
             objective_name, objective_value = metrics[0]
