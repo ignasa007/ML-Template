@@ -49,11 +49,23 @@ def interpret_args(args: str, to: type, num_layers: Optional[int] = None) -> Lis
             out.append(cast(arg))
     
     if isinstance(num_layers, int):
-        if len(out) == 1:
+        if len(out) == 0:
+            out = [Ellipsis] * num_layers
+        elif len(out) == 1:
             out = out * num_layers
-        elif len(out) != num_layers:
+        elif len(out) > num_layers:
+            # Added so that `num_layers` can be 0, without having to reset all kwargs
+            import warnings
+            warnings.warn(
+                "Number of args parsed is greater than the number of layers:"
+                f" args = {args}, to = {to.__name__}, num_layers = {num_layers} -> out = {out}."
+                f" Slicing to use the first {num_layers} values only.",
+                RuntimeWarning
+            )
+            out = out[:num_layers]
+        else:
             raise RuntimeError(
-                "Number of args parsed is not equal to the number of layers:"
+                "Number of args parsed is less than the number of layers:"
                 f" args = {args}, to = {to.__name__}, num_layers = {num_layers} -> out = {out}."
             )
 
