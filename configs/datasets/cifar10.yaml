@@ -1,5 +1,7 @@
 root: "./datastore/cifar10/"
 output_dim: 10
+to_cuda: false
+batch_size: 64
 
 sizes:
     train: 0.8
@@ -13,9 +15,6 @@ transforms:
     eval:
         input: 
             - name: "ToTensor"
-
-batch_size: 64
-to_cuda: false
 
 objective: "CELoss"
 metrics:

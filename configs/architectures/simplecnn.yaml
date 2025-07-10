@@ -11,14 +11,14 @@ conv:
     paddings: "1"
     biases: "True"
     poolers:
-        names: "MaxPool2d AvgPool2d None"
+        names: "MaxPool2d"
         sizes: "2"
-        strides: "None 1 ..."
-        paddings: "0"
-    normalization_layers: "BatchNorm2d"
+        strides: "..."
+        paddings: "..."
+    normalization_layers: "None"
     activations: "ReLU"
 
 fcn:
-    hidden_dims: "64 10"
-    biases: "true"
+    hidden_dims: "64 32"
+    biases: "False"
     activations: "ReLU"

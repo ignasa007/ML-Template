@@ -7,8 +7,8 @@ from metrics import ResultsTracker
 
 
 def eval_batch(
-    input,
-    target: torch.Tensor,
+    inputs,
+    targets: torch.Tensor,
     model: torch.nn.Module,
     results: ResultsTracker
 ) -> Dict[str, torch.Tensor]:
@@ -25,8 +25,8 @@ def eval_batch(
     """
 
     with torch.no_grad():
-        out = model(input)
-        metrics = results.forward(out, target)
+        outputs = model(inputs)
+        metrics = results.forward(outputs, targets)
 
     return metrics
 
@@ -48,8 +48,8 @@ def eval_epoch(
     """
 
     results.reset()
-    for input, target in data_loader:
-        _ = eval_batch(input, target, model, results)
+    for inputs, targets in data_loader:
+        _ = eval_batch(inputs, targets, model, results)
     metrics = results.compute()
 
     return metrics

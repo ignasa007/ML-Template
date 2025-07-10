@@ -2,7 +2,7 @@ from typing import List
 
 from yacs.config import CfgNode
 import torch
-from torch.utils.data import DataLoader, default_collate
+from torch.utils.data import DataLoader
 
 from datasets import BaseDataset
 

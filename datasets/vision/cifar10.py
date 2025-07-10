@@ -15,6 +15,7 @@ class CIFAR10(CIFAR10Torch):
 
     storage_device = torch.device("cpu")
     target_device = torch.device("cpu")
+    collate = staticmethod(default_collate)
 
     def __init__(self, *args, **kwargs):
         super(CIFAR10, self).__init__(*args, **kwargs)
@@ -28,27 +29,7 @@ class CIFAR10(CIFAR10Torch):
 
     def to(self, device: torch.device):
         # `self.data` and `self.targets` are NumPy arrays -> can't put either of them on GPU.
-        pass
-
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Implements regular `__getitem__`, unless some transform has been defined which converts
-            img/target to a `Tensor`, in which case the tensor is transferred to `target_device`.
-        """
-        img, target = super(CIFAR10, self).__getitem__(index)
-        # Only transfer to `target_device`` if image/target retrieved as a Tensor.
-        if hasattr(img, "to"):
-            img = img.to(self.target_device)
-        if hasattr(target, "to"):
-            target = target.to(self.target_device)
-        return img, target
-    
-    def collate(self, batch):
-        """Implements `default_collate`, followed by transfer to `target_device`."""
-        inputs, targets = default_collate(batch)
-        inputs = inputs.to(self.target_device)
-        targets = targets.to(self.target_device)
-        return inputs, targets
+        return
 
 
 @register_dataset("cifar10")
