@@ -1,4 +1,5 @@
 from yacs.config import CfgNode
+import torch
 import torch.nn as nn
 
 from ..registry import register_architecture
@@ -13,6 +14,7 @@ class SimpleCNN(nn.Module):
     def __init__(self, cfg: CfgNode):
 
         super(SimpleCNN, self).__init__()
+        self.device = torch.device("cpu")
 
         ### CONVOLUTIONAL BACKBONE
         
@@ -100,6 +102,11 @@ class SimpleCNN(nn.Module):
             self.fcn_layers
         )):
             module.reset_parameters()
+
+    def to(self, device):
+
+        self.device = device
+        return super(SimpleCNN, self).to(device)
 
     def forward(self, x):
 

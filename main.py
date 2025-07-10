@@ -126,8 +126,8 @@ def main(args):
 
             # Need to transfer to GPU here because I don't know multiprocessing :')
             # https://discuss.pytorch.org/t/dataset-location-runtimeerror-caught-runtimeerror-in-dataloader-worker-process-0/156842/4
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+            inputs = inputs.to(model.device)
+            targets = targets.to(model.device)
 
             # Book-keeping
             n_batches += 1

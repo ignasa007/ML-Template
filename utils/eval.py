@@ -25,6 +25,8 @@ def eval_batch(
     """
 
     with torch.no_grad():
+        inputs = inputs.to(model.device)
+        targets = targets.to(model.device)
         outputs = model(inputs)
         metrics = results.forward(outputs, targets)
 

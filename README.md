@@ -61,6 +61,12 @@ python -m main \
 ### Usage Notes
 
 - Make sure to omit `--device_index` if you do not wish to use a GPU.
+- Set `loader.num_workers` to 0 when TMPDIR is mounted on an NFS, since in that case, the DataLoader throws an error before exiting:
+
+    ```bash
+    OSError: [Errno 16] Device or resource busy: '.nfs...'
+    ```
+    See [PyTorch issue](https://github.com/pytorch/pytorch/issues/143471) for details. 
 - When reading configurations, combinations of `.`, `-` and/or `_`, such as `...` or just `-`, can be used to indicate `kwargs` which are to be skipped. E.g. `strides: "None 1 ..."` implies that the first and second layers' `kwargs` are `strides=None` and `strides=1`, respectively, while for the third layer, `stride` is not passed (default value is used).
 - Make sure to use spaces, NOT tabs (as much as it may hurt you to do so), since YAML parsers require spaces to mark indentation.
 
