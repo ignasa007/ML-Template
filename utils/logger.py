@@ -94,7 +94,6 @@ class Logger:
         self.log(formatted_metrics, with_time, print_text)
 
     def save_objects(self, **kwargs) -> None:
-        
         """
         Save Python objects as (binary) pickle files.
         Args:
