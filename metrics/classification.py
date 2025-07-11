@@ -43,7 +43,7 @@ class CELoss(BaseMetric):
         out = out.squeeze()
         # CE loss expects logits, not probabilities
         batch_loss = self.loss_fn(out, target)
-        self.total_loss += batch_loss
+        self.total_loss += batch_loss.detach()
         n_samples = target.size(0)
         self.total_samples += n_samples
         
