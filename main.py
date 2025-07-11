@@ -100,12 +100,14 @@ def main(args):
 
     logger.log("Preparing model...", print_text=True)
     model = get_model(args.architecture, cfg).to(device)
+    # For the lazy layers to initialize; eval mode so that running stats are not updated for the normalization layers
+    model.eval(); model(next(iter(training_loader))[0].to(model.device))
     logger.log("Finshed preparing model.\n", print_text=True)
 
     optimizer = get_optimizer(model.parameters(), cfg)
     scheduler = get_scheduler(optimizer, cfg)
-    training_results_tracker, evaluation_results_tracker = ResultsTracker(cfg), ResultsTracker(cfg)
-    training_results_tracker.to(device), evaluation_results_tracker.to(device)
+    training_results_tracker = ResultsTracker(cfg).to(device)
+    evaluation_results_tracker = ResultsTracker(cfg).to(device)
 
     ###
 
