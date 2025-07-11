@@ -17,13 +17,15 @@ class ResultsTracker:
         for metric_name in cfg.dataset.metrics:
             self.metrics.append(get_metric(metric_name, cfg))
 
-    def to(self, device: Device) -> None:
+    def to(self, device: Device):
         for metric in self.metrics:
             metric = metric.to(device)
+        return self
 
-    def reset(self) -> None:
+    def reset(self):
         for metric in self.metrics:
             metric.reset()
+        return self
 
     def forward(self, preds: Tensor, target: Tensor) -> List[Tuple[str, Tensor]]:
         output = list()

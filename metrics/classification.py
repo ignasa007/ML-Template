@@ -39,20 +39,20 @@ class CELoss(BaseMetric):
         # Squeeze to make the output compatible for BCE loss
         out = out.squeeze()
 
-        # Loss expects logits, not probabilities
-        batch_total_loss = self.loss_fn(out, target)
-        self.total_loss += batch_total_loss
+        # Squeeze to make the output compatible for BCE loss
+        out = out.squeeze()
+        # CE loss expects logits, not probabilities
+        batch_loss = self.loss_fn(out, target)
+        self.total_loss += batch_loss
         n_samples = target.size(0)
         self.total_samples += n_samples
-
+        
         # Return average loss
-        batch_avg_loss = batch_total_loss / n_samples
-
-        return batch_avg_loss
+        return batch_loss / n_samples
 
     def compute(self) -> torch.Tensor:
-        avg_loss = self.total_loss / self.total_samples
-        return avg_loss
+        # Return average loss
+        return self.total_loss / self.total_samples
 
 
 class ClassificationMetric(BaseMetric):
@@ -67,10 +67,10 @@ class ClassificationMetric(BaseMetric):
             raise TypeError(f"Expected `num_classes` to be an `int` (got {type(output_dim).__name__}).")
 
         if output_dim == 1:
-            self.compute_proba = torch.sigmoid
+            self.compute_probs = torch.sigmoid
             self.underlying_metric = underlying_metric_class(task="binary")
         elif output_dim > 1:
-            self.compute_proba = lambda probs: torch.softmax(probs, dim=-1)
+            self.compute_probs = lambda probs: torch.softmax(probs, dim=-1)
             self.underlying_metric = underlying_metric_class(task="multiclass", num_classes=output_dim)
         else:
             raise ValueError(f"Expected `cfg.dataset.output_dim` to be >=1 (got {output_dim}).")
@@ -85,8 +85,8 @@ class ClassificationMetric(BaseMetric):
 
     def forward(self, out: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         # Other metrics expect (rather, can work with) probabilities, but not logits
-        proba = self.compute_proba(out)
-        metric = self.underlying_metric.forward(proba, target)
+        probs = self.compute_probs(out)
+        metric = self.underlying_metric.forward(probs, target)
         return metric
 
     def compute(self) -> torch.Tensor:
