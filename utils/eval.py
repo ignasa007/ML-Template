@@ -25,8 +25,6 @@ def eval_batch(
     """
 
     with torch.no_grad():
-        inputs = inputs.to(model.device)
-        targets = targets.to(model.device)
         outputs = model(inputs)
         metrics = results.forward(outputs, targets)
 
@@ -51,6 +49,8 @@ def eval_epoch(
 
     results.reset()
     for inputs, targets in data_loader:
+        inputs = inputs.to(model.device)
+        targets = targets.to(model.device)
         _ = eval_batch(inputs, targets, model, results)
     metrics = results.compute()
 
