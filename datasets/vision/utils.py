@@ -9,7 +9,7 @@ def interpret_size_as_int(size, total):
         return None
     elif isinstance(size, float) and 0. <= size <= 1.:
         return int(size*total)
-    elif isinstance(size, int) and size >= 1:
+    elif isinstance(size, int) and size >= 0:
         return size
     else:
         raise ValueError(f"Received invalid size: `{size=}`, `type(size) = {type(size).__name__}`.")

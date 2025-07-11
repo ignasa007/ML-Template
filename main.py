@@ -93,7 +93,7 @@ def main(args):
     logger.log("Finished pre-processing datasets.", print_text=True)
 
     logger.log("Preparing data-loaders...", print_text=True)
-    names, evaluation_datasets = zip(*evaluation_datasets)
+    names, evaluation_datasets = zip(*evaluation_datasets) if evaluation_datasets else [tuple()]*2
     training_loader, *evaluation_loaders = get_loaders(training_dataset, *evaluation_datasets, cfg=cfg, device=device)
     evaluation_loaders = list(zip(names, evaluation_loaders))
     logger.log("Finished preparing data-loaders.", print_text=True)
